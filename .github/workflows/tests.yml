@@ -76,7 +76,7 @@ jobs:
     - name: Check security issues
       run: bash bandit.sh
       env:
-        SKIP_VENV
+        SKIP_VENV: 1
 
     - name: Static type checking
       run: bash mypy.sh
