@@ -15,8 +15,9 @@ pyramid.available_languages =
     en
     de
     fr
-pyramid.includes =
-    pyramid_debugtoolbar
+# TODO: Figure out why this causes an issue with zope.transaction
+# pyramid.includes =
+#     pyramid_debugtoolbar
 
 sqlalchemy.url = sqlite:///%(here)s/riskmatrix.sqlite
 
