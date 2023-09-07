@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE 1.0\n"
-"POT-Creation-Date: 2023-09-06 12:08+0200\n"
+"POT-Creation-Date: 2023-09-07 12:29+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,6 +16,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Lingua 4.15.0\n"
 
+#. translation strings used for testing
+#: ./src/riskmatrix/testing.py
+msgid "Just a test"
+msgstr ""
+
+#: ./src/riskmatrix/testing.py
+msgid "<b>bold</b>"
+msgstr ""
+
 #. Default: Close
 #: ./src/riskmatrix/layouts/flash.pt
 msgid "Close"
@@ -23,4 +32,14 @@ msgstr ""
 
 #: ./src/riskmatrix/layouts/navbar.pt
 msgid "Logout"
+msgstr ""
+
+#: ./src/riskmatrix/wtform/validators.py
+msgid "Password and confirmation do not match."
+msgstr ""
+
+#: ./src/riskmatrix/wtform/validators.py
+msgid ""
+"Password must have minimal length of 8 characters, contain one upper case "
+"letter, one lower case letter, one digit and one special character."
 msgstr ""
