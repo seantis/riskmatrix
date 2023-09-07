@@ -1,4 +1,4 @@
-RiskMatrix [![Tests](https://github.com/seantis/riskmatrix/actions/workflows/tests.yml/badge.svg) [![codecov](https://codecov.io/gh/seantis/riskmatrix/graph/badge.svg?token=DVCXQ0B2TP)](https://codecov.io/gh/seantis/riskmatrix) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+RiskMatrix [![Tests](https://github.com/seantis/riskmatrix/actions/workflows/tests.yml/badge.svg)](https://github.com/seantis/riskmatrix/actions/workflows/tests.yml) [![codecov](https://codecov.io/gh/seantis/riskmatrix/graph/badge.svg?token=DVCXQ0B2TP)](https://codecov.io/gh/seantis/riskmatrix) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 ================
 
 Getting Started
