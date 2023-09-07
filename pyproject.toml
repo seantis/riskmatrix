@@ -15,11 +15,11 @@ norecursedirs = [
 ]
 
 [tool.coverage.run]
-source = ["riskfactor"]
+source = ["src"]
 omit = [
-    "riskfactor.pshell.py",
-    "riskfactor/types.py",
-    "riskfactor/*/types.py"
+    "src/riskfactor.pshell.py",
+    "src/riskfactor/types.py",
+    "src/riskfactor/*/types.py"
 ]
 
 [tool.coverage.report]
