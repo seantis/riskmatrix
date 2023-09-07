@@ -1,0 +1,18 @@
+<header i18n:domain="riskmatrix">
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-expand-md navbar-dark navbar-fixed-top bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="${request.route_url('home')}">RiskMatrix</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" tal:condition="request.user">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse" tal:condition="request.user">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li tal:repeat="entry entries" tal:replace="entry">
+                    </li>
+                </ul>
+                <a class="btn btn-outline-light" href="${request.route_url('logout')}"><i class="fad fa-sign-out"></i> <tal:b i18n:translate>Logout</tal:b></a>
+            </div>
+        </div>
+    </nav>
+</header>

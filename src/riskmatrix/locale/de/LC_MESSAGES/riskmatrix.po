@@ -1,0 +1,8 @@
+#. Default: Close
+#: src/riskmatrix/layouts/flash.pt
+msgid "Close"
+msgstr ""
+
+#: src/riskmatrix/layouts/navbar.pt
+msgid "Logout"
+msgstr ""
