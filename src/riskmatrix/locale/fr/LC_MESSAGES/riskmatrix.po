@@ -1,3 +1,12 @@
+#. translation strings used for testing
+#: src/riskmatrix/testing.py
+msgid "Just a test"
+msgstr ""
+
+#: src/riskmatrix/testing.py
+msgid "<b>bold</b>"
+msgstr ""
+
 #. Default: Close
 #: src/riskmatrix/layouts/flash.pt
 msgid "Close"
@@ -5,4 +14,14 @@ msgstr ""
 
 #: src/riskmatrix/layouts/navbar.pt
 msgid "Logout"
+msgstr ""
+
+#: src/riskmatrix/wtform/validators.py
+msgid "Password and confirmation do not match."
+msgstr ""
+
+#: src/riskmatrix/wtform/validators.py
+msgid ""
+"Password must have minimal length of 8 characters, contain one upper case "
+"letter, one lower case letter, one digit and one special character."
 msgstr ""
