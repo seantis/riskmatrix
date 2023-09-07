@@ -1,0 +1,23 @@
+<metal:block use-macro="main_template">
+
+    <tal:block metal:fill-slot="content">
+
+        <div class="container">
+            <h1>${title}</h1>
+
+            <form id="edit-participant-form" enctype="multipart/form-data" method="POST" novalidate>
+                <input type="hidden" name="csrf_token" value="${csrf_token}" />
+                <div class="mb-3" tal:repeat="field form">
+                    ${field.label()}
+                    ${field()}
+                    <div class="invalid-feedback" tal:repeat="error field.errors">${error}</div>
+                </div>
+                <div class="mb-3">
+                    <a href="${target_url}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-submit">Save</button>
+                </div>
+            </form>
+        </div>
+
+    </tal:block>
+</metal:block>

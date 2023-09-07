@@ -1,0 +1,50 @@
+name: Run stubtest on embedded stubs
+
+on:
+  workflow_dispatch:  # allow to run manually
+  schedule:
+    - cron: '0 7 * * 1'  # run once a week on monday morning
+
+jobs:
+  stubtest:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install packages
+      run: |
+        sudo apt update
+        sudo apt install \
+          build-essential \
+          build-essential \
+          ca-certificates \
+          curl \
+          git \
+          gcc \
+          g++ \
+          libc-dev \
+          libffi-dev \
+          libmagic1 \
+          libpq-dev \
+          libssl-dev \
+          postgresql \
+          postgresql-contrib
+
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        sed -i 's/psycopg\[c\]/psycopg[binary]/g' requirements.txt
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt -r test_requirements.txt
+        pip install pytest-codecov[git]
+
+    - name: Stubtest
+      run: bash stubtest.sh
+      env:
+        SKIP_VENV: 1

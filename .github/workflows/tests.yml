@@ -1,0 +1,84 @@
+name: Tests
+
+on:
+  workflow_dispatch:  # allow to run manually
+  push:
+  pull_request:
+
+jobs:
+
+  tests:
+    strategy:
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+    name: Tests
+
+    steps:
+    - name: Install packages
+      run: |
+        sudo apt update
+        sudo apt install \
+          build-essential \
+          build-essential \
+          ca-certificates \
+          curl \
+          git \
+          gcc \
+          g++ \
+          libc-dev \
+          libffi-dev \
+          libmagic1 \
+          libpq-dev \
+          libssl-dev \
+          postgresql \
+          postgresql-contrib
+
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Get branch name (merge)
+      if: github.event_name != 'pull_request'
+      shell: bash
+      run: |
+        echo "CODECOV_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" \
+             >> $GITHUB_ENV
+
+    - name: Get branch name (pull request)
+      if: github.event_name == 'pull_request'
+      shell: bash
+      run: |
+        echo "CODECOV_BRANCH=$(echo ${GITHUB_HEAD_REF} | tr / -)" \
+             >> $GITHUB_ENV
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        sed -i 's/psycopg\[c\]/psycopg[binary]/g' requirements.txt
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt -r test_requirements.txt
+        pip install pytest-codecov[git]
+
+    - name: Run tests
+      run: py.test --cov --codecov
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Linting
+      run: flake8 src/ tests/ stubs/
+
+    - name: Check security issues
+      run: bash bandit.sh
+      env:
+        SKIP_VENV
+
+    - name: Static type checking
+      run: bash mypy.sh
+      env:
+        SKIP_VENV: 1
