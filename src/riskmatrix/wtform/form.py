@@ -8,6 +8,8 @@ from riskmatrix.i18n import pluralize
 from riskmatrix.i18n import translate
 
 from .fields import TransparentFormField
+from .validators import Immutable
+from .widgets import CheckboxListWidget
 
 
 from typing import Any, TypeVar, TYPE_CHECKING
@@ -54,11 +56,14 @@ class BootstrapMeta(DefaultMeta):
         field_type = unbound_field.field_class.__name__
         if field_type in ('SelectField', 'SelectMultipleField'):
             css_class = 'form-select'
+        elif field_type in ('RadioField', 'CheckboxField'):
+            css_class = ''
+            options.setdefault('widget', CheckboxListWidget())
         else:
             css_class = 'form-control'
 
-        if 'class' in render_kw:
-            css_class += f" {render_kw['class']}"
+        if (extra := render_kw.get('class')):
+            css_class = f'{css_class} {extra}' if css_class else extra
 
         render_kw['class'] = css_class
         options['render_kw'] = render_kw
@@ -127,3 +132,11 @@ class Form(BaseForm):
                 field.process(formdata, kwargs[name])
             else:
                 field.process(formdata)
+
+    def populate_obj(self, obj: object) -> None:
+        for name, field in self._fields.items():
+            # don't populate disabled/read only fields
+            if any(isinstance(v, Immutable) for v in field.validators or ()):
+                continue
+
+            field.populate_obj(obj, name)

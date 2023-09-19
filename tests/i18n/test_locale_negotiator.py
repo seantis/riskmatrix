@@ -1,7 +1,3 @@
-import pytest
-from pyramid.httpexceptions import HTTPBadRequest
-from unittest.mock import Mock
-
 from riskmatrix.i18n.locale_negotiator import LocaleNegotiator
 from riskmatrix.models import User
 from riskmatrix.testing import DummyRequest
@@ -40,51 +36,7 @@ def test_default_language(config):
     assert negotiator.default_language(request) == 'fr'
 
 
-def test_call_request(config):
-    config.registry.settings['pyramid.available_languages'] = 'en fr'
-    negotiator = LocaleNegotiator()
-
-    request = DummyRequest()
-    request.params['set_language'] = 'fr'
-    assert negotiator(request) == 'fr'
-
-    request = DummyRequest()
-    request.params['set_language'] = 'de'
-    assert negotiator(request) == 'en'
-
-
-def test_call_request_invalid(config):
-    config.registry.settings['pyramid.available_languages'] = 'en fr'
-    negotiator = LocaleNegotiator()
-    request = DummyRequest()
-    request.params['set_language'] = '49pt7vot5%c1%81bw360odo8j'
-    assert negotiator(request) == 'en'
-
-
-def test_call_invalid_request(config):
-    negotiator = LocaleNegotiator()
-    params = Mock()
-    request = DummyRequest(params=params)
-    params.get.side_effect = ValueError(
-        "Invalid boundary in multipart form: b''"
-    )
-    with pytest.raises(HTTPBadRequest) as e:
-        negotiator(request)
-    assert str(e.value) == "Invalid boundary in multipart form: b''"
-
-    request.exception = HTTPBadRequest()
-    assert negotiator(request) == 'en'
-
-
-def test_call_session(config):
-    config.registry.settings['pyramid.available_languages'] = 'en de'
-    request = DummyRequest()
-    request.session = {'locale_name': 'de'}
-    negotiator = LocaleNegotiator()
-    assert negotiator(request) == 'de'
-
-
-def test_call_user(config, user):
+def test_call_user(config, organization, user):
     session = config.dbsession
     config.registry.settings['pyramid.available_languages'] = 'en de fr'
     request = DummyRequest()
@@ -92,7 +44,7 @@ def test_call_user(config, user):
     negotiator = LocaleNegotiator()
     assert negotiator(request) == 'en'
 
-    user.locale = 'fr'
+    organization.locale = 'fr'
     session.flush()
     negotiator = LocaleNegotiator()
     assert negotiator(request) == 'fr'
@@ -144,16 +96,9 @@ def test_call_order(config, organization):
     user = User(
         organization=organization,
         email='test@example.com',
-        locale='en'
     )
     session.add(user)
     session.flush()
     session.refresh(user)
     config.testing_securitypolicy(userid=user.id)
-    assert negotiator(request) == 'en'
-
-    request.session = {'locale_name': 'de'}
-    assert negotiator(request) == 'de'
-
-    request.params['set_language'] = 'en'
     assert negotiator(request) == 'en'

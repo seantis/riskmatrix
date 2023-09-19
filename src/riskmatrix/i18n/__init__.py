@@ -1,6 +1,6 @@
+from .core import pluralize
+from .core import translate
 from .locale_negotiator import LocaleNegotiator
-from .util import pluralize
-from .util import translate
 from .translation_string import TranslationStringFactory
 
 

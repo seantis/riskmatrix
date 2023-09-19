@@ -6,7 +6,12 @@ from riskmatrix.orm import get_tm_session
 
 # import or define all models here to ensure they are attached to the
 # Base.metadata prior to any initialization routines
+from .asset import Asset
 from .organization import Organization
+from .risk import Risk
+from .risk_assessment import RiskAssessment
+from .risk_catalog import RiskCatalog
+from .risk_category import RiskCategory
 from .user import User
 
 
@@ -49,6 +54,11 @@ def includeme(config: 'Configurator') -> None:
 
 __all__ = (
     'includeme',
+    'Asset',
     'Organization',
+    'Risk',
+    'RiskAssessment',
+    'RiskCatalog',
+    'RiskCategory',
     'User'
 )

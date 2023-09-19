@@ -1,6 +1,7 @@
 from datetime import datetime
 from sedate import standardize_date, to_timezone
-from sqlalchemy.types import DateTime, TypeDecorator
+from sqlalchemy import DateTime
+from sqlalchemy import TypeDecorator
 
 
 from typing import TYPE_CHECKING
@@ -9,12 +10,12 @@ if TYPE_CHECKING:
 
 
 class UTCDateTime(TypeDecorator[datetime]):
-    """ Stores dates as UTC.
+    """
+    Stores dates as UTC.
 
     Internally, they are stored as timezone naive, because Postgres takes
     the local timezone into account when working with timezones. Values taken
     and values returned are forced to be timezone-aware though.
-
     """
 
     impl = DateTime

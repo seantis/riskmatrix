@@ -7,13 +7,182 @@ msgstr ""
 msgid "<b>bold</b>"
 msgstr ""
 
+#: src/riskmatrix/layouts/navbar.pt
+msgid "Logout"
+msgstr ""
+
+#: src/riskmatrix/layouts/navbar.py
+msgid "Organization"
+msgstr ""
+
+#: src/riskmatrix/layouts/navbar.py src/riskmatrix/views/risk_catalog.py
+msgid "Risk Catalog"
+msgstr ""
+
+#: src/riskmatrix/layouts/navbar.py
+msgid "Risk Assessment"
+msgstr ""
+
 #. Default: Close
 #: src/riskmatrix/layouts/flash.pt
 msgid "Close"
 msgstr ""
 
-#: src/riskmatrix/layouts/navbar.pt
-msgid "Logout"
+#: src/riskmatrix/layouts/steps.py src/riskmatrix/views/risk_assessment.py
+msgid "Identify Risks"
+msgstr ""
+
+#: src/riskmatrix/layouts/steps.py src/riskmatrix/views/risk_assessment.py
+msgid "Assess Impact"
+msgstr ""
+
+#: src/riskmatrix/layouts/steps.py src/riskmatrix/views/risk_assessment.py
+msgid "Assess Likelihood"
+msgstr ""
+
+#: src/riskmatrix/layouts/steps.py
+msgid "Generate Risk Matrix"
+msgstr ""
+
+#: src/riskmatrix/layouts/steps.py
+msgid "Plan Actions"
+msgstr ""
+
+#: src/riskmatrix/views/organization.py src/riskmatrix/views/risk_assessment.py
+#: src/riskmatrix/views/risk.py src/riskmatrix/views/risk_catalog.py
+msgid "Name"
+msgstr ""
+
+#: src/riskmatrix/views/organization.py
+msgid "E-Mail"
+msgstr ""
+
+#: src/riskmatrix/views/organization.py
+msgid "Language"
+msgstr ""
+
+#: src/riskmatrix/views/risk_assessment.py
+msgid "Edit Risk Assessment"
+msgstr ""
+
+#: src/riskmatrix/views/risk_assessment.py src/riskmatrix/views/risk.py
+#: src/riskmatrix/views/risk_catalog.py
+msgid "Description"
+msgstr ""
+
+#: src/riskmatrix/views/risk_assessment.py src/riskmatrix/views/risk.py
+msgid "Category"
+msgstr ""
+
+#: src/riskmatrix/views/risk_assessment.py
+msgid "Asset"
+msgstr ""
+
+#: src/riskmatrix/views/risk_assessment.py src/riskmatrix/views/risk.py
+#: src/riskmatrix/views/risk_catalog.py
+msgid "Edit Risk"
+msgstr ""
+
+#: src/riskmatrix/views/risk_assessment.py
+msgid "Impact"
+msgstr ""
+
+#: src/riskmatrix/views/risk_assessment.py
+msgid "Likelihood"
+msgstr ""
+
+#: src/riskmatrix/views/risk_assessment.py
+#, python-format
+msgid "Invalid impact level \"${level}\" provided."
+msgstr ""
+
+#: src/riskmatrix/views/risk_assessment.py
+#, python-format
+msgid "Invalid likelihood level \"${level}\" provided."
+msgstr ""
+
+#: src/riskmatrix/views/risk.py src/riskmatrix/views/risk_catalog.py
+msgid "Add Risk"
+msgstr ""
+
+#: src/riskmatrix/views/risk.py src/riskmatrix/views/risk_catalog.py
+msgid "A risk with this name already exists."
+msgstr ""
+
+#: src/riskmatrix/views/risk.py src/riskmatrix/views/risk_catalog.py
+#: src/riskmatrix/views/templates/table.pt
+msgid "Delete"
+msgstr ""
+
+#: src/riskmatrix/views/risk.py
+#, python-format
+msgid "${catalog}: Risks"
+msgstr ""
+
+#: src/riskmatrix/views/risk.py
+msgid "Delete Risk"
+msgstr ""
+
+#: src/riskmatrix/views/risk.py
+#, python-format
+msgid "Succesfully deleted risk \"${name}\""
+msgstr ""
+
+#: src/riskmatrix/views/risk.py
+#, python-format
+msgid "Succesfully added risk \"${name}\""
+msgstr ""
+
+#: src/riskmatrix/views/risk_catalog.py
+msgid "View Risks"
+msgstr ""
+
+#: src/riskmatrix/views/risk_catalog.py
+msgid "Edit Catalog"
+msgstr ""
+
+#: src/riskmatrix/views/risk_catalog.py
+msgid "Delete Risk Catalog"
+msgstr ""
+
+#: src/riskmatrix/views/risk_catalog.py
+msgid "Add Risk Catalog"
+msgstr ""
+
+#: src/riskmatrix/views/risk_catalog.py
+#, python-format
+msgid "Succesfully deleted risk catalog \"${name}\""
+msgstr ""
+
+#: src/riskmatrix/views/risk_catalog.py
+#, python-format
+msgid "Succesfully added risk catalog \"${name}\""
+msgstr ""
+
+#: src/riskmatrix/views/templates/login.pt
+msgid "Sign in"
+msgstr ""
+
+#: src/riskmatrix/views/templates/login.pt
+msgid "Email address"
+msgstr ""
+
+#: src/riskmatrix/views/templates/login.pt
+msgid "Password"
+msgstr ""
+
+#: src/riskmatrix/views/templates/form.pt
+#: src/riskmatrix/views/templates/table.pt
+msgid "Cancel"
+msgstr ""
+
+#: src/riskmatrix/views/templates/form.pt
+#: src/riskmatrix/views/templates/table.pt
+msgid "Save"
+msgstr ""
+
+#: src/riskmatrix/views/templates/table.pt
+msgid "Do you really wish to delete \"${item_title}\"?"
 msgstr ""
 
 #: src/riskmatrix/wtform/validators.py
@@ -24,4 +193,12 @@ msgstr ""
 msgid ""
 "Password must have minimal length of 8 characters, contain one upper case "
 "letter, one lower case letter, one digit and one special character."
+msgstr ""
+
+#: src/riskmatrix/wtform/validators.py
+msgid "This field is disabled."
+msgstr ""
+
+#: src/riskmatrix/wtform/validators.py
+msgid "This field is read only."
 msgstr ""

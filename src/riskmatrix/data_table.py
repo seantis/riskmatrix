@@ -4,22 +4,31 @@ from operator import attrgetter
 from markupsafe import escape
 from pyramid.httpexceptions import HTTPOk
 from wtforms.widgets import html_params
-from typing import Any, ClassVar, Generic, Literal, TypeVar, TYPE_CHECKING
 
+from riskmatrix.i18n import translate
 from riskmatrix.static import datatable_css
 from riskmatrix.static import datatable_js
 
-RT = TypeVar('RT')  # RowType
+
+from typing import Any
+from typing import ClassVar
+from typing import Generic
+from typing import Literal
+from typing import TypeVar
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
     from pyramid.interfaces import IRequest
-    from .controls import Button
-    from .types import Callback
 
-    Getter = Callable[[str], Callable[[RT], Any]]
+    from riskmatrix.controls import Button
+    from riskmatrix.types import Callback
+
+    Getter = Callable[[str], Callable[['RT'], Any]]
     # NOTE: We are more lenient to support functions such as len
     DataFormatter = Callable[[Any], str | int | float]
     SortKeyCallable = Callable[[Any], Any]
+
+RT = TypeVar('RT')  # RowType
 
 
 def maybe_escape(value: str | None) -> str:
@@ -28,7 +37,132 @@ def maybe_escape(value: str | None) -> str:
     return escape(value)
 
 
-class DataTable(Generic[RT]):
+class DataColumn:
+    """
+    Utility class to encapsulate DataTables column features.
+    Refer to https://datatables.net/reference/option/ for possible options.
+    Use snake case for naming, i.e. `deferRender` becomes `defer_render`.
+    """
+
+    _order:      int = 0  # used to ensure columns are ordered
+    title:       str
+    description: str
+    options:     dict[str, Any]
+
+    def __init__(
+        self,
+        title:       str,
+        description: str = '',
+        format_data: 'DataFormatter' = maybe_escape,
+        sort_key:    'SortKeyCallable | None' = None,
+        condition:   'Callback[bool] | None' = None,
+        **options:   Any
+    ):
+
+        self.title = title
+        self.description = description
+        self.format_data = format_data
+        self.sort_key = sort_key
+        self.options = options
+        self._condition = condition
+
+        DataColumn._order += 1
+        self._order = DataColumn._order
+
+    def __set_name__(self, owner: type['DataTable[Any]'], name: str) -> None:
+        self.options.setdefault('name', name)
+
+    def active(self, context: Any, request: 'IRequest') -> bool:
+        if callable(self._condition):
+            return self._condition(context, request)
+        return True
+
+    @property
+    def name(self) -> str:
+        return self.options.get('name', '')
+
+    @name.setter
+    def name(self, value: str) -> None:
+        self.options['name'] = value
+
+    def data(self, data: Any) -> str | dict[str, str]:
+        display = str(self.format_data(data))
+        if callable(self.sort_key):
+            return {'display': display, '@data-order': self.sort_key(data)}
+        else:
+            return display
+
+    def header(self) -> str:
+        params = {'scope': 'col'}
+        if 'class_name' in self.options:
+            params['class'] = self.options['class_name']
+        if self.description:
+            params['title'] = translate(self.description)
+            params['data-bs-toggle'] = 'tooltip'
+        for name, option in self.options.items():
+            params[f'data_{name}'] = format_option(option)
+        if self.name and 'data_data' not in params:
+            # ensure data is set to name if not specified otherwise
+            params['data_data'] = self.name
+        return f'<th {html_params(**params)}>{translate(self.title)}</th>'
+
+    def cell(self, data: Any) -> str:
+        params = {}
+        if 'class_name' in self.options:
+            params['class'] = self.options['class_name']
+
+        if callable(self.sort_key):
+            params['data_order'] = self.sort_key(data)
+        return f'<td {html_params(**params)}>{self.format_data(data)}</td>'
+
+
+def coerce_int(value: Any) -> int:
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return -1
+
+
+def format_option(option: Any) -> str:
+    if option is None:
+        return 'null'
+    elif isinstance(option, bool):
+        return 'true' if option else 'false'
+    elif isinstance(option, (int, float, str)):
+        return str(option)
+    else:
+        return json.dumps(option, separators=(',', ':'))
+
+
+class DataTableMeta(type):
+    """
+    This meta class ensures that we keep track of all the columns in our
+    class without needing to traverse all the attributes each time. We
+    compute _all_columns the first time a class gets instantiated.
+    """
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
+        if not hasattr(cls, '_all_columns'):
+            cls._all_columns = sorted(
+                (
+                    c for name in dir(cls)
+                    if isinstance((c := getattr(cls, name, None)), DataColumn)
+                ),
+                key=attrgetter('_order')
+            )
+        return type.__call__(cls, *args, **kwargs)
+
+    def __setattr__(cls, name: str, value: object) -> None:
+        if isinstance(value, DataColumn) and hasattr(cls, '_all_columns'):
+            delattr(cls, '_all_columns')
+        type.__setattr__(cls, name, value)
+
+    def __delattr__(cls, name: str) -> None:
+        if isinstance(getattr(cls, name, None), DataColumn):
+            delattr(cls, '_all_columns')
+        type.__delattr__(cls, name)
+
+
+class DataTable(Generic[RT], metaclass=DataTableMeta):
     """
     Utility class to encapsulate DataTables features.
     Refer to https://datatables.net/reference/option/ for possible options.
@@ -39,16 +173,24 @@ class DataTable(Generic[RT]):
     columns:         list['DataColumn']
     context:         Any
     request:         'IRequest'
+    id:              str
     options:         dict[str, Any]
 
-    def __init__(self,
-                 context:   Any,
-                 request:   'IRequest',
-                 getter:    'Getter[RT]' = attrgetter,
-                 **options: Any) -> None:
+    def __init__(
+        self,
+        context:   Any,
+        request:   'IRequest',
+        getter:    'Getter[RT]' = attrgetter,
+        id:        str | None = None,
+        **options: Any
+    ) -> None:
 
         self.context = context
         self.request = request
+
+        if id is None:
+            id = self.__class__.__name__.lower()
+        self.id = id
 
         # filter visible columns
         self.columns = [
@@ -58,6 +200,12 @@ class DataTable(Generic[RT]):
 
         self._get = getter
         self.options = self.default_options.copy()
+        locale = request.locale_name
+        if locale != 'en':
+            url = self.request.static_url(
+                f'riskmatrix:static/json/dataTables.{locale}.json'
+            )
+            self.options.setdefault('language', {}).setdefault('url', url)
         self.options.update(options)
 
         datatable_css.need()
@@ -71,7 +219,7 @@ class DataTable(Generic[RT]):
 
     def __call__(self) -> str:
         has_buttons = self.buttons() is not NotImplemented
-        params = {'class': 'table data-table'}
+        params = {'id': self.id, 'class': 'table data-table'}
         for name, option in self.options.items():
             params[f'data_{name}'] = format_option(option)
         html = f'<table {html_params(**params)}>\n'
@@ -215,7 +363,7 @@ class AJAXDataTable(DataTable[RT]):
         for row in self.rows():
             column_data: dict[str, Any]
             row_id = self._get('id')(row)
-            column_data = {'DT_RowID': f'row-{row_id}'}
+            column_data = {'DT_RowId': f'row-{row_id}'}
             for column in self.columns:
                 cell_data = getattr(row, column.name)
                 column_data[column.name] = column.data(cell_data)
@@ -229,97 +377,3 @@ class AJAXDataTable(DataTable[RT]):
             'recordsFiltered': self.filtered_records(),
             'data': data,
         }
-
-
-class DataColumn:
-    """
-    Utility class to encapsulate DataTables column features.
-    Refer to https://datatables.net/reference/option/ for possible options.
-    Use snake case for naming, i.e. `deferRender` becomes `defer_render`.
-    """
-
-    title:       str
-    description: str
-    options:     dict[str, Any]
-
-    def __init__(self,
-                 title:       str,
-                 description: str = '',
-                 format_data: 'DataFormatter' = maybe_escape,
-                 sort_key:    'SortKeyCallable | None' = None,
-                 condition:   'Callback[bool] | None' = None,
-                 **options:   Any):
-
-        self.title = title
-        self.description = description
-        self.format_data = format_data
-        self.sort_key = sort_key
-        self.options = options
-        self._condition = condition
-
-    def __set_name__(self, owner: type[DataTable[Any]], name: str) -> None:
-        self.options.setdefault('name', name)
-        if not hasattr(owner, '_all_columns'):
-            owner._all_columns = []
-        owner._all_columns.append(self)
-
-    def active(self, context: Any, request: 'IRequest') -> bool:
-        if callable(self._condition):
-            return self._condition(context, request)
-        return True
-
-    @property
-    def name(self) -> str:
-        return self.options.get('name', '')
-
-    @name.setter
-    def name(self, value: str) -> None:
-        self.options['name'] = value
-
-    def data(self, data: Any) -> str | dict[str, str]:
-        display = str(self.format_data(data))
-        if callable(self.sort_key):
-            return {'display': display, '@data-order': self.sort_key(data)}
-        else:
-            return display
-
-    def header(self) -> str:
-        params = {'scope': 'col'}
-        if 'class_name' in self.options:
-            params['class'] = self.options['class_name']
-        if self.description:
-            params['title'] = self.description
-            params['data-bs-toggle'] = 'tooltip'
-        for name, option in self.options.items():
-            params[f'data_{name}'] = format_option(option)
-        if self.name and 'data_data' not in params:
-            # ensure data is set to name if not specified otherwise
-            params['data_data'] = self.name
-        return f'<th {html_params(**params)}>{self.title}</th>'
-
-    def cell(self, data: Any) -> str:
-        params = {}
-        if 'class_name' in self.options:
-            params['class'] = self.options['class_name']
-
-        if callable(self.sort_key):
-            params['data_order'] = self.sort_key(data)
-        return f'<td {html_params(**params)}>{self.format_data(data)}</td>'
-
-
-def coerce_int(value: Any) -> int:
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return -1
-
-
-def format_option(option: Any) -> str:
-    if option is None:
-        return 'null'
-    elif isinstance(option, bool):
-        return 'true' if option else 'false'
-    elif isinstance(option, (int, float, str)):
-        return str(option)
-    else:
-        return json.dumps(option, separators=(',', ':'))

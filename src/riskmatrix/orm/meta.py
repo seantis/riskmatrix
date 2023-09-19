@@ -10,16 +10,21 @@ from sqlalchemy.orm import registry
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.schema import MetaData
 
+from .json_type import JSONObject
 from .utcdatetime_type import UTCDateTime
 from .uuid_type import UUIDStr as UUIDStrType
 
 
+from typing import Any
 from typing import Annotated
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sqlalchemy.sql.schema import _NamingSchemaTD
 
 # Recommended naming convention used by Alembic, as various different database
 # providers will autogenerate vastly different names making migrations more
 # difficult. See: http://alembic.zzzcomputing.com/en/latest/naming.html
-NAMING_CONVENTION = {
+NAMING_CONVENTION: '_NamingSchemaTD' = {
     'ix': 'ix_%(column_0_label)s',
     'uq': 'uq_%(table_name)s_%(column_0_name)s',
     'ck': 'ck_%(table_name)s_%(constraint_name)s',
@@ -27,7 +32,7 @@ NAMING_CONVENTION = {
     'pk': 'pk_%(table_name)s'
 }
 
-metadata = MetaData(naming_convention=NAMING_CONVENTION)  # type:ignore
+metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
 
 # Some commonly used columns
@@ -62,5 +67,6 @@ class Base(DeclarativeBase):
         str_128: String(length=128),
         str_256: String(length=256),
         Text: TextType,
-        File: LargeBinary
+        File: LargeBinary,
+        dict[str, Any]: JSONObject,
     })

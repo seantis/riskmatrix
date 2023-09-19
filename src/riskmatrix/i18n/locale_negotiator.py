@@ -1,4 +1,3 @@
-from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.interfaces import ILocaleNegotiator
 from zope.interface import implementer
 
@@ -18,47 +17,29 @@ class LocaleNegotiator:
     def default_language(self, request: 'IRequest') -> str:
         settings = request.registry.settings
         default = settings.get('pyramid.default_locale_name', None)
+        if default:
+            return default
+
         available = self.available_languages(request)
-        if not default:
-            if available:
-                return available[0]
-            return 'en'
-        return default
+        return available[0] if available else 'en'
 
     def __call__(self, request: 'IRequest') -> str:
         available = self.available_languages(request)
         default = self.default_language(request)
 
-        # Store in session if locale name is set explictly
-        locale: str | None = None
-        try:
-            locale_ = request.params.get('set_language', None)
-            if isinstance(locale_, str):
-                locale = locale_
-        except ValueError as e:
-            if not request.exception:
-                raise HTTPBadRequest(str(e)) from None
+        locale: str | None
 
-        if locale and locale in available:
-            request.session['locale_name'] = locale
-            return locale
-
-        # 1. Try to get locale name from the session
-        locale = request.session.get('locale_name', None)
-        if locale and locale in available:
-            return locale
-
-        # 2. Get language from user object
+        # 1. Get language from user organization
         user = request.user
         if user:
-            locale = user.locale
-            if locale and locale in available:
+            locale = user.organization.locale
+            if locale in available:
                 return locale
 
-        # 3. Use browser's Accept-Language header
+        # 2. Use browser's Accept-Language header
         locale = request.accept_language.lookup(available, default=default)
         if locale and locale in available:
             return locale
 
-        # 4. Fallback to default language
+        # 3. Fallback to default language
         return default

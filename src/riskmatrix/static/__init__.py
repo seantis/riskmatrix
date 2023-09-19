@@ -57,3 +57,4 @@ datatable_bootstrap = js(
     'dataTables.bootstrap5.min.js', depends=[bootstrap_core, datatable_core]
 )
 datatable_js = js('datatables_custom.js', depends=[datatable_bootstrap])
+xhr_edit_js = js('xhr_edit.js', depends=[datatable_js])

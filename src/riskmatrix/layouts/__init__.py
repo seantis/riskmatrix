@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from .flash import flash
 from .layout import Layout
 from .navbar import navbar
+from .steps import steps
 
 
 if TYPE_CHECKING:
@@ -25,4 +26,10 @@ def includeme(config: 'Configurator') -> None:
         panel=navbar,
         name='navbar',
         renderer='navbar.pt'
+    )
+
+    config.add_panel(
+        panel=steps,
+        name='steps',
+        renderer='steps.pt'
     )

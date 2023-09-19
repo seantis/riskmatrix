@@ -34,6 +34,7 @@ def includeme(config: Configurator) -> None:
 
     config.set_locale_negotiator(LocaleNegotiator())
     config.add_translation_dirs('riskmatrix:locale')
+    # wtforms 3.0 ships with its own translations
     config.add_translation_dirs('wtforms:locale')
 
     security_policy = SessionSecurityPolicy(timeout=28800)

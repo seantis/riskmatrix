@@ -1,3 +1,9 @@
+// we add some additional settings for caching
+$.fn.dataTable.models.oSettings.oCache = {
+    recordsTotal: -1,
+    clear: false,
+}
+
 // Adapted from DataTables server side pipelining example
 $.fn.dataTable.pipeline = function (ajax_url) {
     var cacheLower = -1;
@@ -5,14 +11,10 @@ $.fn.dataTable.pipeline = function (ajax_url) {
     var cacheLastRequest = null;
     var cacheLastJson = null;
     var cacheWindowSize = 250;
-    var recordsTotal = -1;
 
     return function(request, drawCallback, settings) {
         var api = new $.fn.dataTable.Api(settings);
-        var options = api.init();
-        if(recordsTotal < 0 && options.deferLoading) {
-            recordsTotal = options.deferLoading;
-        }
+        api.initCache();
 
         var ajax          = false;
         var drawStart     = request.start;
@@ -32,18 +34,18 @@ $.fn.dataTable.pipeline = function (ajax_url) {
             requestEnd -= requestStart;
             requestStart = 0;
         }
-        if(recordsTotal > 0 && requestEnd > recordsTotal) {
+        if(settings.oCache.recordsTotal > 0 && requestEnd > settings.oCache.recordsTotal) {
             // snap cache window to end
-            requestStart -= requestEnd - recordsTotal;
+            requestStart -= requestEnd - settings.oCache.recordsTotal;
             if(requestStart < 0) {
                 requestStart = 0;
             }
-            requestEnd = recordsTotal;
+            requestEnd = settings.oCache.recordsTotal;
         }
 
-        if(settings.clearCache) {
+        if(settings.oCache.clear) {
             ajax = true;
-            settings.clearCache = false;
+            settings.oCache.clear = false;
         } else if(drawLength < 0) {
             ajax = true;
         } else if(cacheLower < 0 || drawStart < cacheLower || drawEnd > cacheUpper) {
@@ -72,7 +74,7 @@ $.fn.dataTable.pipeline = function (ajax_url) {
                 'dataType': 'json',
                 'cache': false,
                 'success': function(json) {
-                    recordsTotal = json.recordsTotal;
+                    settings.oCache.recordsTotal = json.recordsTotal;
                     cacheLastJson = $.extend(true, {}, json);
                     if(cacheLower != drawStart) {
                         json.data.splice(0, drawStart-cacheLower);
@@ -93,10 +95,50 @@ $.fn.dataTable.pipeline = function (ajax_url) {
     }
 };
 
+$.fn.dataTable.Api.register('initCache()', function() {
+    var options = this.init();
+    return this.iterator('table', function(settings) {
+        if(settings.oCache.recordsTotal < 0 && options.deferLoading) {
+            settings.oCache.recordsTotal = options.deferLoading;
+        }
+    });
+});
+
 $.fn.dataTable.Api.register('clearPipeline()', function() {
     return this.iterator('table', function(settings) {
-        settings.clearCache = true;
+        settings.oCache.clear = true;
     });
+});
+
+// compared to the normal add this will make sure server-side-processing
+// will perform a full refetch, rather than a truncated one to the old
+// size of the result-set
+// TODO: We could improve this by modifying the XHR cache in-place, rather
+//       than always doing a refetch
+$.fn.dataTable.Api.register('row.add_xhr()', function(row) {
+    this.initCache();
+    this.iterator('table', function(settings) {
+        if (settings._iRecordsDisplay >= 0) {
+            settings._iRecordsDisplay++;
+        }
+        settings.oCache.recordsTotal++;
+        settings.oCache.clear = true;
+    });
+    return this.row.add(row);
+});
+
+$.fn.dataTable.Api.register('rows.add_xhr()', function(rows) {
+    this.initCache();
+    this.iterator('table', function(settings) {
+        for (var i=0; i<rows.length; i++) {
+            if (settings._iRecordsDisplay >= 0) {
+                settings._iRecordsDisplay++;
+            }
+            settings.oCache.recordsTotal++;
+        }
+        settings.oCache.clear = true;
+    });
+    return this.rows.add(rows);
 });
 
 $(function() {
