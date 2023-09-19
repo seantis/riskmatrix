@@ -10,7 +10,6 @@ from uuid import uuid4
 from riskmatrix.orm.meta import Base
 from riskmatrix.orm.meta import str_128
 from riskmatrix.orm.meta import str_256
-from riskmatrix.orm.meta import str_32
 from riskmatrix.orm.meta import UUIDStr
 from riskmatrix.orm.meta import UUIDStrPK
 
@@ -32,13 +31,13 @@ class User(Base):
     first_name: Mapped[str_256 | None]
     last_name: Mapped[str_256 | None]
     email: Mapped[str_256] = mapped_column(unique=True)
-    locale: Mapped[str_32]
     password: Mapped[str_128 | None]
-    modified: Mapped[datetime | None] = mapped_column(
-        onupdate=utcnow
-    )
+
     last_login: Mapped[datetime | None]
     last_password_change: Mapped[datetime | None]
+
+    created: Mapped[datetime] = mapped_column(default=utcnow)
+    modified: Mapped[datetime | None] = mapped_column(onupdate=utcnow)
 
     organization: Mapped['Organization'] = relationship(
         back_populates='users',
@@ -51,15 +50,14 @@ class User(Base):
         organization: 'Organization',
         password:     str | None = None,
         first_name:   str | None = None,
-        last_name:    str | None = None,
-        locale:       str = 'en'
+        last_name:    str | None = None
     ):
         self.id = str(uuid4())
+        self.created = utcnow()
         self.email = email
         self.organization = organization
         self.first_name = first_name
         self.last_name = last_name
-        self.locale = locale
 
         if password is not None:
             self.set_password(password)
@@ -93,4 +91,4 @@ class User(Base):
             return False
 
     def groups(self) -> list[str]:
-        return [f'org_{self.organization.id}']
+        return [f'org_{self.organization_id}']

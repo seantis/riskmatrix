@@ -48,7 +48,7 @@ def test_data_table_default_options():
     assert table.request == request
     assert table.options == {'paging': False}
     assert table().startswith(
-        '<table class="table data-table" data-paging="false">'
+        '<table class="table data-table" data-paging="false"'
     )
 
     table = TestTable(None, request, paging=True)
@@ -56,7 +56,7 @@ def test_data_table_default_options():
     assert table.request == request
     assert table.options == {'paging': True}
     assert table().startswith(
-        '<table class="table data-table" data-paging="true">'
+        '<table class="table data-table" data-paging="true"'
     )
 
 
@@ -78,7 +78,7 @@ def test_data_table_html(config, user):
     assert html == str(table)
     assert html == table.__html__()
     assert html == (
-        '<table class="table data-table">\n'
+        '<table class="table data-table" id="usertable">\n'
         '  <thead>\n'
         '    <tr>\n'
         '      <th data-data="first_name" data-name="first_name" scope="col">'
@@ -115,7 +115,7 @@ def test_data_table_buttons_html(config, user):
     assert html == str(table)
     assert html == table.__html__()
     assert html == (
-        '<table class="table data-table">\n'
+        '<table class="table data-table" id="usertable">\n'
         '  <thead>\n'
         '    <tr>\n'
         '      <th data-data="first_name" data-name="first_name" scope="col">'
@@ -385,7 +385,7 @@ def test_ajax_data_table_data(config, user):
     assert data['recordsTotal'] == 12
     assert data['recordsFiltered'] == 1
     assert data['data'] == [{
-        'DT_RowID': f'row-{user.id}',
+        'DT_RowId': f'row-{user.id}',
         'first_name': 'Test User'
     }]
 
@@ -416,7 +416,7 @@ def test_ajax_data_table_data_buttons(config, user):
     assert data['recordsTotal'] == 12
     assert data['recordsFiltered'] == 1
     assert data['data'] == [{
-        'DT_RowID': f'row-{user.id}',
+        'DT_RowId': f'row-{user.id}',
         'first_name': 'Test User',
         'buttons': '<button>Dummy</button>'
     }]

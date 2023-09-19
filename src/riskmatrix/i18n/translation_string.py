@@ -1,8 +1,9 @@
+import translationstring
+from functools import update_wrapper
 from markupsafe import escape
 from markupsafe import Markup
-from translationstring import TranslationString
 
-from .util import translate
+from .core import translate
 
 
 from typing import overload
@@ -46,7 +47,30 @@ if TYPE_CHECKING:
             context: str | None = None,
             *,
             markup: bool = False,
-        ) -> TranslationString: ...
+        ) -> 'TranslationString': ...
+
+
+class TranslationString(translationstring.TranslationString):
+    """
+    TranslationString that will eagerly translate when used
+    inside a Markup.format()
+    """
+
+    def __mod__(self, options: Any) -> 'Self':
+        return type(self)(super().__mod__(options))
+
+    def translated(self, language: str | None = None) -> str:
+        return translate(self, language)
+
+    def __html__(self) -> Markup:
+        return escape(self.translated())
+
+    # NOTE: Allow specifying language in format string
+    #       e.g. '{:de}'.format(_(Markup('<b>Bold</b>')))
+    def __html_format__(self, format_spec: str) -> Markup:
+        if format_spec:
+            return escape(self.translated(format_spec))
+        return self.__html__()
 
 
 class TranslationMarkup(TranslationString):
@@ -87,7 +111,7 @@ class TranslationMarkup(TranslationString):
         if not isinstance(msgid, str) and hasattr(msgid, '__html__'):
             msgid = Markup(msgid)
 
-        elif isinstance(msgid, TranslationString):
+        elif isinstance(msgid, translationstring.TranslationString):
             domain = domain or msgid.domain and msgid.domain[:]
             context = context or msgid.context and msgid.context[:]
             _default = _default or Markup(msgid.default)
@@ -97,7 +121,7 @@ class TranslationMarkup(TranslationString):
                         _mapping.setdefault(k, escape(v))
                 else:
                     _mapping = {k: escape(v) for k, v in msgid.mapping.items()}
-            msgid = Markup(msgid)
+            msgid = Markup(str(msgid))
 
         instance: 'Self' = str.__new__(cls, msgid)
         instance.domain = domain
@@ -132,15 +156,8 @@ class TranslationMarkup(TranslationString):
             )
         return cls(escape(s))
 
-    def __html__(self) -> Markup:
-        return Markup(translate(self))
-
-    # NOTE: Allow specifying language in format string
-    #       e.g. '{:de}'.format(_(Markup('<b>Bold</b>')))
-    def __html_format__(self, format_spec: str) -> Markup:
-        if format_spec:
-            return Markup(translate(self, format_spec))
-        return self.__html__()
+    def translated(self, language: str | None = None) -> Markup:
+        return Markup(translate(self, language))
 
 
 def TranslationStringFactory(factory_domain: str) -> 'TStrCallable':
@@ -209,3 +226,31 @@ def TranslationStringFactory(factory_domain: str) -> 'TStrCallable':
             context=context
         )
     return create
+
+
+# monkeypatch translationstring.dugettext_policy to preserve Markup
+# TODO: Also monkeypatch dungettext_policy for pluralizer?
+_orig_dugettext_policy = translationstring.dugettext_policy
+
+
+def _dugettext_policy(
+    translations: Any,
+    tstring:      str,
+    domain:       str | None,
+    context:      str | None
+) -> str:
+
+    translated = _orig_dugettext_policy(translations, tstring, domain, context)
+    if (
+        hasattr(tstring, '__html__')
+        and not hasattr(translated, '__html__')
+        # our plain TranslationString also implements __html__ but
+        # we don't want it to get interpolated into Markup
+        and not type(tstring) is TranslationString
+    ):
+        return Markup(translated)
+    return translated
+
+
+update_wrapper(_dugettext_policy, _orig_dugettext_policy)
+translationstring.dugettext_policy = _dugettext_policy

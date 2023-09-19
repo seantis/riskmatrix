@@ -27,6 +27,9 @@ class Layout:
     def locale_name(self) -> str:
         return self.request.locale_name
 
+    def csrf_token(self) -> str:
+        return self.request.session.get_csrf_token()
+
     def static_url(self, name: str) -> str:
         return self.request.static_url(name)
 

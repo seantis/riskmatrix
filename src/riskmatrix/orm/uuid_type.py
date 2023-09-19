@@ -1,17 +1,19 @@
-from collections.abc import Callable
 from functools import wraps
 from sqlalchemy import Uuid
 from uuid import UUID as _PythonUUID
+
+
 from typing import Any
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from sqlalchemy import Dialect
+    from typing_extensions import TypeAlias
 
-Processor = Callable[[Any], str | None]
+    Processor: TypeAlias = Callable[[Any], str | None]
 
 
-def coerce_uuid_arg_to_str(proc: Processor) -> Processor:
+def coerce_uuid_arg_to_str(proc: 'Processor') -> 'Processor':
     @wraps(proc)
     def processor(value: Any) -> str | None:
         if isinstance(value, _PythonUUID):
@@ -29,7 +31,7 @@ class UUIDStr(Uuid[str]):
     #       so we add a pre-processor that would convert any
     #       UUIDs to string values first.
 
-    def bind_processor(self, dialect: 'Dialect') -> Processor | None:
+    def bind_processor(self, dialect: 'Dialect') -> 'Processor | None':
         proc = super().bind_processor(dialect)
         if proc is None:
             return None
@@ -41,7 +43,7 @@ class UUIDStr(Uuid[str]):
     def literal_processor(  # type:ignore[override]
         self,
         dialect: 'Dialect'
-    ) -> Processor | None:
+    ) -> 'Processor | None':
         proc = super().literal_processor(dialect)
         if proc is None:
             return None

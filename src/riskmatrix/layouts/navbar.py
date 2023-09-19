@@ -1,3 +1,7 @@
+from markupsafe import Markup
+
+from riskmatrix.i18n import _
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pyramid.interfaces import IRequest
@@ -6,6 +10,9 @@ if TYPE_CHECKING:
 
 
 class NavbarEntry:
+
+    __slots__ = ('title', 'url', 'active')
+
     title:  str
     url:    str
     active: bool
@@ -22,12 +29,17 @@ class NavbarEntry:
         if self.active:
             item_class += ' active'
             link_class += ' active'
-            current = ' aria-current="page"'
-        return (
-            f'<li class="{item_class}">'
-            f'<a class="{link_class}" href="{self.url}"{current}>'
-            f'{self.title}</a>'
+            current = Markup(' aria-current="page"')
+        return Markup(
+            '<li class="{item_class}">'
+            '<a class="{link_class}" href="{url}"{current}>{title}</a>'
             '</li>'
+        ).format(
+            url=self.url,
+            title=self.title,
+            item_class=item_class,
+            link_class=link_class,
+            current=current,
         )
 
     def __str__(self) -> str:
@@ -42,8 +54,23 @@ def navbar(context: object, request: 'IRequest') -> 'RenderData':
         'entries': [
             NavbarEntry(
                 request,
-                'Organization',
+                _('Organization'),
                 request.route_url('organization')
+            ),
+            NavbarEntry(
+                request,
+                _('Risk Catalog'),
+                request.route_url('risk_catalog')
+            ),
+            NavbarEntry(
+                request,
+                _('Assets'),
+                request.route_url('assets')
+            ),
+            NavbarEntry(
+                request,
+                _('Risk Assessment'),
+                request.route_url('assessment')
             ),
         ]
     }

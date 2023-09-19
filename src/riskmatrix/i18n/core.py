@@ -1,13 +1,7 @@
-import translationstring
-from functools import update_wrapper
-from markupsafe import Markup
 from pyramid.i18n import make_localizer
 from pyramid.interfaces import ITranslationDirectories
 from pyramid.threadlocal import get_current_registry
 from pyramid.threadlocal import get_current_request
-
-
-from typing import Any
 
 
 def translate(
@@ -64,25 +58,3 @@ def pluralize(
             setattr(reg, localizer_name, localizer)
 
         return localizer.pluralize(singular, plural, n)
-
-
-# monkeypatch translationstring.dugettext_policy to preserve Markup
-# TODO: Also monkeypatch dungettext_policy for pluralizer?
-_orig_dugettext_policy = translationstring.dugettext_policy
-
-
-def _dugettext_policy(
-    translations: Any,
-    tstring:      str,
-    domain:       str | None,
-    context:      str | None
-) -> str:
-
-    translated = _orig_dugettext_policy(translations, tstring, domain, context)
-    if hasattr(tstring, '__html__') and not hasattr(translated, '__html__'):
-        return Markup(translated)
-    return translated
-
-
-update_wrapper(_dugettext_policy, _orig_dugettext_policy)
-translationstring.dugettext_policy = _dugettext_policy

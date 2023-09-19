@@ -1,6 +1,6 @@
 from markupsafe import Markup
-from pyramid.i18n import TranslationString
 
+from riskmatrix.i18n.translation_string import TranslationString
 from riskmatrix.i18n.translation_string import TranslationMarkup
 
 

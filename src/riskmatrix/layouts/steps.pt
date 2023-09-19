@@ -1,0 +1,5 @@
+<div class="list-group">
+    <tal:b tal:repeat="step steps">
+    <a href="${step.url}" class="list-group-item list-group-item-action${' active' if active else ''}${' disabled' if step.disabled else ''}" tal:attributes="aria-current 'true' if active else None; aria-disabled 'true' if step.disabled else None" tal:define="active layout.request.path_url == step.url">${repeat.step.number}. ${step.title}</a>
+    </tal:b>
+</div>

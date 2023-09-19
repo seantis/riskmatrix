@@ -6,6 +6,7 @@ from riskmatrix.i18n import _
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from abc import abstractmethod
     from wtforms import Field
     from wtforms import Form
 
@@ -32,3 +33,48 @@ def password_validator(form: 'Form', field: 'Field') -> None:
             'one special character.'
         )
         raise ValidationError(msg)
+
+
+class Immutable:
+    """
+    This marker class is only useful as a common base class to the derived
+    validators :class:`~riskmatrix.wtform.validators.Disabled` and
+    :class:`~riskmatrix.wtform.validators.ReadOnly`.
+
+    Our custom form class :class:`~riskmatrix.wtform.form.Form` will skip
+    any fields that have a validator derived from this class when executing
+    :meth:`Form.populate_obj() <riskmatrix.wtform.form.Form.populate_obj>`.
+    """
+    if TYPE_CHECKING:
+        @abstractmethod
+        def __call__(self, form: 'Form', field: 'Field') -> None: ...
+
+
+class Disabled(Immutable):
+    """
+    Sets a field to disabled.
+
+    Validation fails if formdata is supplied anyways.
+    """
+
+    def __init__(self) -> None:
+        self.field_flags = {'disabled': True, 'aria_disabled': True}
+
+    def __call__(self, form: 'Form', field: 'Field') -> None:
+        if field.raw_data is not None:
+            raise ValidationError(_('This field is disabled.'))
+
+
+class ReadOnly(Immutable):
+    """
+    Sets a field to disabled.
+
+    Validation fails if formdata is supplied anyways.
+    """
+
+    def __init__(self) -> None:
+        self.field_flags = {'readonly': True, 'aria_readonly': True}
+
+    def __call__(self, form: 'Form', field: 'Field') -> None:
+        if field.data != field.object_data:
+            raise ValidationError(_('This field is read only.'))
