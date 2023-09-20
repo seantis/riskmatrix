@@ -56,12 +56,26 @@ def test_button_title():
     button = Button(title='Edit')
     assert button() == '<button class="btn" type="button">Edit</button>'
 
+    # html injection
+    button = Button(title='<script>')
+    assert button() == (
+        '<button class="btn" type="button">&lt;script&gt;</button>'
+    )
+
 
 def test_button_description():
     button = Button(description='Edit')
     assert button() == (
         '<button class="btn" type="button">'
         '<span title="Edit" data-bs-toggle="tooltip"></span>'
+        '</button>'
+    )
+
+    # html injection
+    button = Button(description='<script>')
+    assert button() == (
+        '<button class="btn" type="button">'
+        '<span title="&lt;script&gt;" data-bs-toggle="tooltip"></span>'
         '</button>'
     )
 
