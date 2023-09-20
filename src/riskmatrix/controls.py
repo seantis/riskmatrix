@@ -1,5 +1,8 @@
 from enum import Enum
+from markupsafe import Markup
 from wtforms.widgets import html_params
+
+from riskmatrix.i18n import translate
 
 
 from typing import ClassVar
@@ -24,8 +27,8 @@ class Icon:
         self.name = name
         self.style = style
 
-    def __call__(self) -> str:
-        return f'<i class="{self.style} fa-{self.name}"></i>'
+    def __call__(self) -> Markup:
+        return Markup('<i class="{} fa-{}"></i>').format(self.style, self.name)
 
     def __str__(self) -> str:
         return self.__call__()
@@ -126,37 +129,39 @@ class Button:
             if name:
                 self.html_params['name'] = name
 
-    def __call__(self) -> str:
+    def __call__(self) -> Markup:
+        assert self.element in ('a', 'button')
         if self.disabled and self.description:
-            description = html_params(**{
-                'title': self.description,
+            desc_params = {
+                'title': translate(self.description),
                 'class': 'd-inline-block',
                 'tabindex': 0,
                 'data_bs_toggle': 'tooltip'
-            })
-            html = f'<span {description}>'
+            }
+            html = Markup(f'<span {html_params(**desc_params)}>')
         else:
-            html = ''
+            html = Markup('')
 
-        html += f'<{self.element} {html_params(**self.html_params)}>'
+        html += Markup(f'<{self.element} {html_params(**self.html_params)}>')
 
         if not self.disabled and self.description:
-            description = html_params(title=self.description)
-            html += f'<span {description} data-bs-toggle="tooltip">'
+            description = html_params(title=translate(self.description))
+            html += Markup(f'<span {description} data-bs-toggle="tooltip">')
 
         if self.icon:
             html += self.icon()
         if self.icon and self.title:
             html += ' '
-        html += f'{self.title}'
+
+        html += translate(self.title)
 
         if not self.disabled and self.description:
-            html += '</span>'
+            html += Markup('</span>')
 
-        html += f'</{self.element}>'
+        html += Markup(f'</{self.element}>')
 
         if self.disabled and self.description:
-            html += '</span>'
+            html += Markup('</span>')
 
         return html
 
