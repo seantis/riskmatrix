@@ -6,7 +6,6 @@ from sqlalchemy import ForeignKeyConstraint
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm import validates
 from sqlalchemy.orm import Mapped
 from uuid import uuid4
 
@@ -78,21 +77,6 @@ class Risk(Base):
         self.organization_id = catalog.organization_id
         self.category = category
         self.meta = meta
-
-    @validates('impact', 'likelihood')
-    def ensure_larger_than_one(
-        self,
-        key: str,
-        magnitude: int | None
-    ) -> int | None:
-
-        if magnitude is None:
-            return None
-
-        if magnitude < 1:
-            raise ValueError(f'{key} cannot be lower than 1')
-
-        return magnitude
 
     def __acl__(self) -> list['ACL']:
         return [
