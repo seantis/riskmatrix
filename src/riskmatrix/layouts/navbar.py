@@ -4,6 +4,7 @@ from riskmatrix.i18n import _
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pyramid.interfaces import IRequest
 
     from riskmatrix.types import RenderData
@@ -17,10 +18,20 @@ class NavbarEntry:
     url:    str
     active: bool
 
-    def __init__(self, request: 'IRequest', title: str, url: str):
+    def __init__(
+        self,
+        request: 'IRequest',
+        title:   str,
+        url:     str,
+        active:  'Callable[[IRequest, str], bool] | None' = None
+    ):
         self.title = title
         self.url = url
-        self.active = request.path_url == url
+
+        if active is None:
+            self.active = request.path_url == url
+        else:
+            self.active = active(request, url)
 
     def __call__(self) -> str:
         item_class = 'nav-item'
@@ -70,7 +81,8 @@ def navbar(context: object, request: 'IRequest') -> 'RenderData':
             NavbarEntry(
                 request,
                 _('Risk Assessment'),
-                request.route_url('assessment')
+                request.route_url('assessment'),
+                lambda request, url: request.show_steps,
             ),
         ]
     }
