@@ -1,9 +1,21 @@
 from _typeshed import SupportsItems
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Protocol, overload
+from typing_extensions import TypeAlias
 
 from wtforms.fields.core import Field, UnboundField
 from wtforms.meta import DefaultMeta, _MultiDictLike
+
+_FormErrors: TypeAlias = dict[str | None, Sequence[str] | _FormErrors]
+
+# _unbound_fields will always be a list on an instance, but on a
+# class it might be None, if it never has been instantiated, or
+# not instantianted after a new field had been added/removed
+class _UnboundFields(Protocol):
+    @overload
+    def __get__(self, obj: None, owner: type[object] | None = None) -> list[tuple[str, UnboundField[Any]]] | None: ...
+    @overload
+    def __get__(self, obj: object, owner: type[object] | None = None) -> list[tuple[str, UnboundField[Any]]]: ...
 
 class BaseForm:
     meta: DefaultMeta
@@ -37,8 +49,9 @@ class BaseForm:
     def validate(self, extra_validators: Mapping[str, Sequence[Any]] | None = None) -> bool: ...
     @property
     def data(self) -> dict[str, Any]: ...
+    # because of the Liskov violation in FormField.errors we need to make errors a recursive type
     @property
-    def errors(self) -> dict[str | None, Sequence[str]]: ...
+    def errors(self) -> _FormErrors: ...
 
 class FormMeta(type):
     def __init__(cls, name: str, bases: Sequence[type[object]], attrs: Mapping[str, Any]) -> None: ...
@@ -52,7 +65,7 @@ class Form(BaseForm, metaclass=FormMeta):
     # intended way
     Meta: ClassVar[type[Any]]
     # this attribute is documented, so we annotate it
-    _unbound_fields: ClassVar[list[tuple[str, UnboundField[Any]]]]
+    _unbound_fields: _UnboundFields
     def __init__(
         self,
         formdata: _MultiDictLike | None = None,
