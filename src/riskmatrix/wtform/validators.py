@@ -4,6 +4,7 @@ from wtforms.validators import ValidationError
 from riskmatrix.i18n import _
 
 
+from typing import Any
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from abc import abstractmethod
@@ -45,6 +46,7 @@ class Immutable:
     any fields that have a validator derived from this class when executing
     :meth:`Form.populate_obj() <riskmatrix.wtform.form.Form.populate_obj>`.
     """
+    field_flags: dict[str, Any] = {}
     if TYPE_CHECKING:
         @abstractmethod
         def __call__(self, form: 'Form', field: 'Field') -> None: ...
@@ -58,7 +60,7 @@ class Disabled(Immutable):
     """
 
     def __init__(self) -> None:
-        self.field_flags = {'disabled': True, 'aria_disabled': True}
+        self.field_flags = {'disabled': True, 'aria_disabled': 'true'}
 
     def __call__(self, form: 'Form', field: 'Field') -> None:
         if field.raw_data is not None:
@@ -73,7 +75,7 @@ class ReadOnly(Immutable):
     """
 
     def __init__(self) -> None:
-        self.field_flags = {'readonly': True, 'aria_readonly': True}
+        self.field_flags = {'readonly': True, 'aria_readonly': 'true'}
 
     def __call__(self, form: 'Form', field: 'Field') -> None:
         if field.data != field.object_data:
