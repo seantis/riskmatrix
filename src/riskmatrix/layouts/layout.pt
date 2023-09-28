@@ -29,7 +29,22 @@
 
             ${panel('flash')}
 
-            <tal:block metal:define-slot="content" />
+            <div class="container">
+
+                <div class="row" tal:omit-tag="not:layout.show_steps()">
+
+                    <div class="col-md-auto" tal:condition="layout.show_steps()">
+                        ${panel('steps')}
+                    </div>
+
+                    <div class="col" tal:omit-tag="not:layout.show_steps()">
+                        <tal:block metal:define-slot="content" />
+                    </div>
+                </div>
+
+            </div>
+
+            <tal:block metal:define-slot="modals" />
 
         </main>
 

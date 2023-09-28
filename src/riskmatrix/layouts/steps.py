@@ -20,15 +20,15 @@ def steps(context: 'Organization', request: 'IRequest') -> 'RenderData':
         'steps': [
             Step(
                 _('Identify Risks'),
-                request.route_url('risks', id=context.id)
+                request.route_url('assessment', id=context.id)
             ),
             Step(
                 _('Assess Impact'),
-                request.route_url('risks_impact', id=context.id)
+                request.route_url('assess_impact', id=context.id)
             ),
             Step(
                 _('Assess Likelihood'),
-                request.route_url('risks_likelihood', id=context.id)
+                request.route_url('assess_likelihood', id=context.id)
             ),
             Step(
                 _('Generate Risk Matrix'),
