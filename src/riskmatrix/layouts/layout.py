@@ -3,6 +3,7 @@ import re
 from datetime import date
 from typing import Any, TYPE_CHECKING
 
+from riskmatrix.cache import request_cache
 from riskmatrix.static import bootstrap_css
 from riskmatrix.static import bootstrap_js
 
@@ -23,6 +24,15 @@ class Layout:
 
         bootstrap_css.need()
         bootstrap_js.need()
+
+    @request_cache()
+    def show_steps(self) -> bool:
+        route = self.request.matched_route
+        return hasattr(route, 'name') and route.name in (
+            'assessment',
+            'assess_impact',
+            'assess_likelihood',
+        )
 
     def locale_name(self) -> str:
         return self.request.locale_name

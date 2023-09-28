@@ -8,6 +8,8 @@ from wtforms import validators
 
 from riskmatrix.controls import Button
 from riskmatrix.models import Asset
+from riskmatrix.models import Risk
+from riskmatrix.models import RiskAssessment
 from riskmatrix.models import RiskCatalog
 from riskmatrix.data_table import AJAXDataTable
 from riskmatrix.data_table import DataColumn
@@ -112,8 +114,31 @@ class AssetForm(Form):
         )
     )
 
-    # TODO: override populate_obj to create/remove empty RiskAssessment
-    #       for all the selected catalogs
+    def populate_obj(self, obj: Asset) -> None:  # type:ignore[override]
+        super().populate_obj(obj)
+
+        existing_risk_ids = {
+            assessment.risk.id
+            for assessment in obj.assessments
+        }
+        new_risk_ids = set()
+
+        session = self.meta.dbsession
+        query = session.query(Risk)
+        query = query.filter(Risk.catalog_id.in_(obj.catalog_ids))
+        for risk in query:
+            new_risk_ids.add(risk.id)
+            if risk.id not in existing_risk_ids:
+                # create an empty assessment
+                session.add(RiskAssessment(obj, risk))
+
+        # remove empty assessments that are no longer relevant
+        for assessment in obj.assessments:
+            if assessment.risk_id in new_risk_ids:
+                continue
+
+            if assessment.modified is None:
+                session.delete(assessment)
 
     def validate_name(self, field: 'Field') -> None:
         session = self.meta.dbsession
@@ -169,7 +194,7 @@ class AssetTable(AJAXDataTable[Asset]):
         # FIXME: We should encode this as JSON and deal with it in edit-xhr
         #        for now we'll treat it like a single-select and only include
         #        the first selection
-        format_data=lambda d: d[0],
+        format_data=lambda d: d[0] if d else '',
         class_name='visually-hidden'
     )
 
@@ -287,6 +312,10 @@ def edit_asset_view(
             data = {
                 'name': maybe_escape(asset.name),
                 'description': maybe_escape(asset.description),
+                # FIXME: same as above we should encode this
+                'catalog_ids': (
+                    asset.catalog_ids[0] if asset.catalog_ids else ''
+                )
             }
             if not isinstance(context, Asset):
                 request.dbsession.flush()
