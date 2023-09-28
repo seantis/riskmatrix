@@ -20,15 +20,15 @@ def steps(context: 'Organization', request: 'IRequest') -> 'RenderData':
         'steps': [
             Step(
                 _('Identify Risks'),
-                request.route_url('assessment', id=context.id)
+                request.route_url('assessment')
             ),
             Step(
                 _('Assess Impact'),
-                request.route_url('assess_impact', id=context.id)
+                request.route_url('assess_impact')
             ),
             Step(
                 _('Assess Likelihood'),
-                request.route_url('assess_likelihood', id=context.id)
+                request.route_url('assess_likelihood')
             ),
             Step(
                 _('Generate Risk Matrix'),
@@ -41,3 +41,17 @@ def steps(context: 'Organization', request: 'IRequest') -> 'RenderData':
             ),
         ]
     }
+
+
+def show_steps(request: 'IRequest') -> bool:
+    # FIXME: For increased robustness we probably should store the
+    #        steps in shared configuration and generate this condition
+    #        from the defined steps
+    route = request.matched_route
+    if hasattr(route, 'name'):
+        return route.name in (
+            'assessment',
+            'assess_impact',
+            'assess_likelihood'
+        )
+    return False

@@ -164,6 +164,8 @@ class IRequest(Interface, _Request):
     user: User
 
     messages: MessageQueue
+    show_steps: bool
+
     response: IResponse
     layout_manager: ILayoutManager
 

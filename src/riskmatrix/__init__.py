@@ -5,6 +5,7 @@ from typing import Any
 
 from riskmatrix.flash import MessageQueue
 from riskmatrix.i18n import LocaleNegotiator
+from riskmatrix.layouts.steps import show_steps
 from riskmatrix.route_factories import root_factory
 from riskmatrix.security import authenticated_user
 from riskmatrix.security_policy import SessionSecurityPolicy
@@ -45,6 +46,7 @@ def includeme(config: Configurator) -> None:
 
     config.add_request_method(authenticated_user, 'user', property=True)
     config.add_request_method(MessageQueue, 'messages', reify=True)
+    config.add_request_method(show_steps, 'show_steps', reify=True)
 
 
 def main(
