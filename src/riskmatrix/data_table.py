@@ -103,7 +103,16 @@ class DataColumn:
             params[f'data_{name}'] = format_option(option)
         if self.name and 'data_data' not in params:
             # ensure data is set to name if not specified otherwise
-            params['data_data'] = self.name
+            if callable(self.sort_key):
+                # we use the same format as the internal representation
+                # but we still have to specify the full layout
+                data_src = (
+                    f'{{"_":"{self.name}.display",'
+                    f'"sort":"{self.name}.@data-order"}}'
+                )
+            else:
+                data_src = self.name
+            params['data_data'] = data_src
         return f'<th {html_params(**params)}>{translate(self.title)}</th>'
 
     def cell(self, data: Any) -> str:
@@ -116,11 +125,11 @@ class DataColumn:
         return f'<td {html_params(**params)}>{self.format_data(data)}</td>'
 
 
-def coerce_int(value: Any) -> int:
+def coerce_int(value: Any, default: int = -1) -> int:
     try:
         return int(value)
     except (ValueError, TypeError):
-        return -1
+        return default
 
 
 def format_option(option: Any) -> str:
@@ -273,10 +282,6 @@ class AJAXDataTable(DataTable[RT]):
 
     def __init__(self, context: Any, request: 'IRequest', **options: Any):
         super().__init__(context, request, **options)
-        self.options['server_side'] = True
-        self.options.setdefault('defer_render', True)
-        self.options.setdefault('processing', True)
-        self.options.setdefault('ajax', self.request.path_url)
 
         # Read basic filter params
         # NOTE: We do not support multi column sorting or column search terms
@@ -292,7 +297,8 @@ class AJAXDataTable(DataTable[RT]):
                 length_menu = length_menu[0]
             default_len = length_menu[0]
         default_len = self.options.get('page_length', default_len)
-        self.length = coerce_int(self.request.GET.get('length', default_len))
+        assert isinstance(default_len, int)
+        self.length = coerce_int(self.request.GET.get('length'), default_len)
         self.search = self.request.GET.get('search[value]', '')
         self.order_by = None
         order_by_index = coerce_int(self.request.GET.get('order[0][column]'))
@@ -308,7 +314,14 @@ class AJAXDataTable(DataTable[RT]):
         if request.is_xhr:
             raise HTTPOk(json=self.data())
 
-        self.options['defer_loading'] = self.total_records()
+        # we only turn on server side rendering if there is more than one page
+        total_records = self.total_records()
+        if self.start > 0 or (0 <= self.length < total_records):
+            self.options['server_side'] = True
+            self.options.setdefault('defer_render', True)
+            self.options.setdefault('processing', True)
+            self.options.setdefault('ajax', self.request.path_url)
+            self.options['defer_loading'] = self.total_records()
 
     def total_records(self) -> int:
         raise NotImplementedError

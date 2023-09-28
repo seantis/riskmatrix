@@ -178,9 +178,7 @@ class AssessImpactTable(AssessmentBaseTable):
     impact = DataColumn(
         _('Impact'),
         format_data=render_impact_input,
-        # FIXME: Figure out why rending of sort_key is broken
-        #        when the table is loaded through XHR request
-        # sort_key=lambda d: -1 if d is None else d
+        sort_key=lambda d: -1 if d is None else d
     )
 
 
@@ -189,9 +187,7 @@ class AssessLikelihoodTable(AssessmentBaseTable):
     likelihood = DataColumn(
         _('Likelihood'),
         format_data=render_impact_input,
-        # FIXME: Figure out why rending of sort_key is broken
-        #        when the table is loaded through XHR request
-        # sort_key=lambda d: -1 if d is None else d
+        sort_key=lambda d: -1 if d is None else d
     )
 
 

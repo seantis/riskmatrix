@@ -145,8 +145,12 @@ def test_ajax_data_table():
         def query(self):
             return []
 
+        # this should never be different from len(query) in production
+        # but we use this in testing to check whether the server side
+        # processing options only get set if the result set can't fit
+        # inside a single request
         def total_records(self):
-            return 0
+            return 20
 
     request = DummyRequest()
     table = TestTable(None, request)
@@ -157,7 +161,7 @@ def test_ajax_data_table():
         'defer_render': True,
         'processing': True,
         'ajax': 'http://example.com',
-        'defer_loading': 0,
+        'defer_loading': 20,
     }
     assert table.draw == -1
     assert table.start == 0
@@ -173,6 +177,8 @@ def test_ajax_data_table():
     request.GET['order[0][column]'] = '0'
     request.GET['order[0][dir]'] = 'desc'
     table = TestTable(None, request)
+    # everything fits on one page
+    assert table.options == {}
     assert table.draw == 1
     assert table.start == 0
     assert table.length == 200
@@ -189,7 +195,7 @@ def test_ajax_data_table():
     table = TestTable(None, request)
     assert table.draw == -1
     assert table.start == 0
-    assert table.length == -1
+    assert table.length == 10
     assert table.search == 'bogus'
     assert table.order_by is None
     assert table.order_dir == 'asc'
