@@ -14,6 +14,7 @@ from .widgets import CheckboxListWidget
 
 from typing import Any, TypeVar, TYPE_CHECKING
 if TYPE_CHECKING:
+    from _typeshed import SupportsItems
     from collections.abc import Callable, Mapping, MutableMapping, Sequence
     from wtforms import Field
     from wtforms.fields.core import UnboundField
@@ -76,6 +77,26 @@ class BootstrapMeta(DefaultMeta):
         if not isinstance(field, TransparentFormField):
             field.label = BootstrapLabel(field.label, field.description)
         return field
+
+    def render_field(
+        self,
+        field: 'Field',
+        render_kw: 'SupportsItems[str, Any]'
+    ) -> Markup:
+
+        # HACK: Immutable validators are special in that their field_flags
+        #       should always be forwarded to render_kw, regardless of the
+        #       field.
+        flags = {}
+        for validator in field.validators:
+            if isinstance(validator, Immutable):
+                flags.update(validator.field_flags)
+
+        if flags:
+            _render_kw = dict(render_kw.items())
+            _render_kw.update(flags)
+            render_kw = _render_kw
+        return super().render_field(field, render_kw)
 
     # NOTE: We implement this so we can provide translations for the
     #       errors from the wtforms builtin validators
