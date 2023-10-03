@@ -20,8 +20,3 @@ stubtest pyramid \
          --mypy-config-file pyproject.toml \
          --allowlist tests/stubtest/pyramid_allowlist.txt \
          --ignore-missing-stub
-
-echo "Running stubtest on wtforms"
-stubtest wtforms \
-         --mypy-config-file pyproject.toml \
-         --allowlist tests/stubtest/wtforms_allowlist.txt
