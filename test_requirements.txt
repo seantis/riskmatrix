@@ -26,5 +26,6 @@ types-pytz==2023.3.0.1
 types-setuptools==68.1.0.0
 types-translationstring==1.4.0.1
 types-WebOb==1.8.0.1
+types-WTForms==3.0.0.0
 virtualenv==20.24.4
 WebTest==3.0.0
