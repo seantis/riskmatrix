@@ -71,7 +71,7 @@ def category_choices(
                 yield from walk_tree(children)
 
     return {
-        group_name: [node for node in walk_tree(children)]
+        group_name: list(walk_tree(children))
         if (children := children_map.get(group_id))
         else [(group_name, group_name)]
         for group_id, group_name in children_map.get(None, [])
