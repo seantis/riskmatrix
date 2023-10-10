@@ -1,12 +1,45 @@
 from enum import Enum
+from markupsafe import escape
 from markupsafe import Markup
-from wtforms.widgets import html_params
 
 from riskmatrix.i18n import translate
 
 
 from typing import ClassVar
 from typing import Literal
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+
+def html_params(**kwargs: object) -> Markup:
+    """
+    Based on wtforms.widgets.html_params. The difference being
+    that it will properly escape " even if a value is Markup
+    and thus will not be escaped by "escape".
+
+    Also it returns Markup so it can be included in Markup.
+    It also treats None the same as False
+    """
+    def params_iter() -> 'Iterator[str]':
+        for key, value in sorted(kwargs.items()):
+            key = str(key)
+            key = key.rstrip('_')
+            if key.startswith('data_') or key.startswith('aria_'):
+                key = key.replace('_', '-')
+
+            if value is True:
+                yield key
+
+            if value is False or value is None:
+                continue
+
+            yield Markup('{}="{}"').format(
+                    key,
+                    # After escaping we need to still replace quotes
+                    escape(value).replace(Markup('"'), Markup('&quot;'))
+                )
+    return Markup(' ').join(params_iter())
 
 
 class IconStyle(Enum):
@@ -138,15 +171,19 @@ class Button:
                 'tabindex': 0,
                 'data_bs_toggle': 'tooltip'
             }
-            html = Markup(f'<span {html_params(**desc_params)}>')
+            html = Markup('<span {}>').format(html_params(**desc_params))
         else:
             html = Markup('')
 
-        html += Markup(f'<{self.element} {html_params(**self.html_params)}>')
+        html += Markup('<{} {}>').format(
+            self.element,
+            html_params(**self.html_params)
+        )
 
         if not self.disabled and self.description:
-            description = html_params(title=translate(self.description))
-            html += Markup(f'<span {description} data-bs-toggle="tooltip">')
+            html += Markup(
+                '<span {} data-bs-toggle="tooltip">'
+            ).format(html_params(title=translate(self.description)))
 
         if self.icon:
             html += self.icon()
@@ -158,7 +195,7 @@ class Button:
         if not self.disabled and self.description:
             html += Markup('</span>')
 
-        html += Markup(f'</{self.element}>')
+        html += Markup('</{}>').format(self.element)
 
         if self.disabled and self.description:
             html += Markup('</span>')

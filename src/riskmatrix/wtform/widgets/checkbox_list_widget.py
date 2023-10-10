@@ -1,5 +1,6 @@
 from markupsafe import Markup
-from wtforms.widgets import html_params
+
+from riskmatrix.controls import html_params
 
 
 from typing import Any
@@ -25,11 +26,12 @@ class CheckboxListWidget:
         assert hasattr(field, '__iter__')
         return Markup('').join(
             Markup(
-                f'<div {html_params(**kwargs)}>'
+                '<div {params}>'
                 '{input}'
                 '{label}'
                 '</div>'
             ).format(
+                params=html_params(**kwargs),
                 input=subfield(class_='form-check-input'),
                 label=subfield.label(class_='form-check-label')
             )
