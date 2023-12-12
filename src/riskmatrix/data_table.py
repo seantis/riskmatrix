@@ -178,8 +178,8 @@ class DataTable(Generic[RT], metaclass=DataTableMeta):
     Use snake case for naming, i.e. `deferRender` becomes `defer_render`.
     """
     default_options: ClassVar[dict[str, Any]] = {}
-    _all_columns:    ClassVar[list['DataColumn']]
-    columns:         list['DataColumn']
+    _all_columns:    ClassVar[list[DataColumn]]
+    columns:         list[DataColumn]
     context:         Any
     request:         'IRequest'
     id:              str

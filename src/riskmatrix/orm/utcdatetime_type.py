@@ -27,7 +27,7 @@ class UTCDateTime(TypeDecorator[datetime]):
         self,
         value: datetime | None,
         dialect: 'Dialect'
-    ) -> 'datetime | None':
+    ) -> datetime | None:
 
         if value is None:
             return None
@@ -37,7 +37,7 @@ class UTCDateTime(TypeDecorator[datetime]):
         self,
         value: datetime | None,
         dialect: 'Dialect'
-    ) -> 'datetime | None':
+    ) -> datetime | None:
 
         if value is None:
             return None

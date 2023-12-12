@@ -187,9 +187,9 @@ def TranslationStringFactory(factory_domain: str) -> 'TStrCallable':
     ) -> TranslationMarkup: ...
     @overload  # noqa: E306
     def create(
-        msgid: 'str',
+        msgid: str,
         mapping: dict[str, Any] | None = None,
-        default: 'str | None' = None,
+        default: str | None = None,
         context: str | None = None,
         *,
         markup: bool = False,

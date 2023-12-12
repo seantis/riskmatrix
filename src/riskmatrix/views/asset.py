@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm.query import Query
     from typing import TypeVar
     from wtforms import Field
+    from wtforms.fields.choices import _Choice
 
     from riskmatrix.models import Organization
     from riskmatrix.types import MixedDataOrRedirect
@@ -41,7 +42,7 @@ if TYPE_CHECKING:
 def catalog_choices(
     organization_id: str,
     session: 'Session'
-) -> list[tuple[str, str]]:
+) -> list['_Choice']:
 
     query = session.query(
         RiskCatalog.id,

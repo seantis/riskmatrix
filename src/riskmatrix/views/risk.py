@@ -20,13 +20,14 @@ from riskmatrix.wtform import Form
 
 from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
-    from collections.abc import Iterable
     from collections.abc import Iterator
     from pyramid.interfaces import IRequest
     from sqlalchemy.orm import Session
     from sqlalchemy.orm.query import Query
     from typing import TypeVar
     from wtforms import Field
+    from wtforms.fields.choices import _Choice
+    from wtforms.fields.choices import _GroupedChoices
 
     from riskmatrix.models import RiskCatalog
     from riskmatrix.types import MixedDataOrRedirect
@@ -43,7 +44,7 @@ if TYPE_CHECKING:
 def category_choices(
     organization_id: str,
     session: 'Session'
-) -> dict[str, 'Iterable[tuple[str, str]]'] | list[tuple[str, str]]:
+) -> 'list[_Choice] | _GroupedChoices':
 
     children_map: dict[str | None, list[tuple[str, str]]] = {}
     query = session.query(
