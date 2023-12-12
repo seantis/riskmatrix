@@ -54,7 +54,6 @@ module = [
     "pyramid.*",
     "pyramid_beaker.*",
     "pyramid_layout.*",
-    "sqlalchemy.*",
     "transaction.*",
     "zope.sqlalchemy.*"
 ]

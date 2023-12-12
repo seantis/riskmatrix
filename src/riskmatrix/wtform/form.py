@@ -1,5 +1,4 @@
 from functools import partial
-from markupsafe import Markup
 from wtforms import Form as BaseForm
 from wtforms import Label
 from wtforms.meta import DefaultMeta
@@ -16,6 +15,7 @@ from typing import Any, TypeVar, TYPE_CHECKING
 if TYPE_CHECKING:
     from _typeshed import SupportsItems
     from collections.abc import Callable, Mapping, MutableMapping, Sequence
+    from markupsafe import Markup
     from wtforms import Field
     from wtforms.fields.core import UnboundField
     from wtforms.form import BaseForm as _BaseForm
@@ -82,7 +82,7 @@ class BootstrapMeta(DefaultMeta):
         self,
         field: 'Field',
         render_kw: 'SupportsItems[str, Any]'
-    ) -> Markup:
+    ) -> 'Markup':
 
         # HACK: Immutable validators are special in that their field_flags
         #       should always be forwarded to render_kw, regardless of the
@@ -111,7 +111,7 @@ class BootstrapLabel(Label):
         self.text = base_label.text
         self.description = description
 
-    def __call__(self, text: str | None = None, **kwargs: Any) -> Markup:
+    def __call__(self, text: str | None = None, **kwargs: Any) -> 'Markup':
         kwargs.setdefault('class', 'form-label')
         if self.description:
             kwargs.setdefault('title', self.description)
