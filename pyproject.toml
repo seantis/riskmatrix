@@ -48,14 +48,10 @@ mypy_path = "$MYPY_CONFIG_FILE_DIR/src:$MYPY_CONFIG_FILE_DIR/stubs"
 
 [[tool.mypy.overrides]]
 module = [
-    "alembic.*",
-    "magic.*",
     "plaster.*",
     "pyramid.*",
     "pyramid_beaker.*",
     "pyramid_layout.*",
-    "transaction.*",
-    "zope.sqlalchemy.*"
 ]
 ignore_missing_imports = true
 disallow_untyped_defs = false
