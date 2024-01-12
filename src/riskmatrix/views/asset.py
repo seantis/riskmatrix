@@ -19,6 +19,8 @@ from riskmatrix.i18n import translate
 from riskmatrix.static import xhr_edit_js
 from riskmatrix.wtform import Form
 
+from sqlalchemy import inspect
+
 
 from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -138,7 +140,7 @@ class AssetForm(Form):
             if assessment.risk_id in new_risk_ids:
                 continue
 
-            if assessment.modified is None:
+            if inspect(assessment).persistent and assessment.modified is None:
                 session.delete(assessment)
 
     def validate_name(self, field: 'Field') -> None:
