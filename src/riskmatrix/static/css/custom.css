@@ -107,7 +107,7 @@ main > .container:empty:last-child {
 }
 
 .bg-dark {
-    background-color: #1b1642 !important;
+    /* background-color: #1b1642 !important; */
     color: #fff;
 }
 
