@@ -80,6 +80,17 @@
             </tr>
         </table>
 
+        <ol>
+            <li>Risk xyz</li>
+            <li>Risk xyz</li>
+            <li>Risk xyz</li>
+            <li>Risk xyz</li>
+            <li>Risk xyz</li>
+            <li>Risk xyz</li>
+            <li>Risk xyz</li>
+            <li>Risk xyz</li>
+        </ol>
+
     </tal:block>
 
 </metal:block>
