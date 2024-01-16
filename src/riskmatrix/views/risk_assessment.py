@@ -2,9 +2,9 @@ from markupsafe import Markup
 from pyramid.httpexceptions import HTTPFound
 from sqlalchemy import func
 from sqlalchemy.orm import contains_eager
-from uuid import uuid4
 from wtforms import StringField
 from wtforms import TextAreaField
+from wtforms.widgets import html_params
 
 from riskmatrix.controls import Button
 from riskmatrix.models import RiskAssessment
@@ -156,39 +156,75 @@ class AssessmentTable(AssessmentBaseTable):
 _RADIO_TEMPLATE = Markup("""
     <div class="form-check form-check-inline">
         <input class="form-check-input" type="radio"
-            name="{name}" id="{name}-{value}" value="{value}"/>
+            name="{name}" id="{name}-{value}" value="{value}"
+            data-url="{url}" data-csrf_token="{csrf_token}" {checked}/>
         <label class="form-check-label" for="{name}-{value}">{value}</label>
     </div>
 """)
-
-
-def render_impact_input(data: int | None) -> Markup:
-    # FIXME: Maybe render_data should always have acces to the row.id
-    name = uuid4()
-    return Markup('').join(
-        _RADIO_TEMPLATE.format(
-            name=name,
-            value=value
-        ) for value in range(1, 6)
-    )
 
 
 class AssessImpactTable(AssessmentBaseTable):
     asset_name = DataColumn(_('Asset'))
     impact = DataColumn(
         _('Impact'),
-        format_data=render_impact_input,
         sort_key=lambda d: -1 if d is None else d
     )
+
+    def cell(self, column: DataColumn, row: RiskAssessment) -> str:
+        if column.name == 'impact':
+            cell_data = self._get(column.name)(row)
+            params = {}
+            if 'class_name' in column.options:
+                params['class'] = column.options['class_name']
+            if callable(column.sort_key):
+                params['data_order'] = column.sort_key(cell_data)
+            request = self.request
+            data = Markup('').join(
+                _RADIO_TEMPLATE.format(
+                    name=row.id,
+                    value=value,
+                    url=request.route_url(
+                        'set_impact', id=row.id, level=value,
+                    ),
+                    csrf_token=request.session.get_csrf_token(),
+                    checked='checked' if row.impact == value else '',
+                ) for value in range(1, 6)
+            )
+            return f'<td {html_params(**params)}>{data}</td>'
+        else:
+            return super().cell(column, row)
 
 
 class AssessLikelihoodTable(AssessmentBaseTable):
     asset_name = DataColumn(_('Asset'))
     likelihood = DataColumn(
         _('Likelihood'),
-        format_data=render_impact_input,
         sort_key=lambda d: -1 if d is None else d
     )
+
+    def cell(self, column: DataColumn, row: RiskAssessment) -> str:
+        if column.name == 'likelihood':
+            cell_data = self._get(column.name)(row)
+            params = {}
+            if 'class_name' in column.options:
+                params['class'] = column.options['class_name']
+            if callable(column.sort_key):
+                params['data_order'] = column.sort_key(cell_data)
+            request = self.request
+            data = Markup('').join(
+                _RADIO_TEMPLATE.format(
+                    name=row.id,
+                    value=value,
+                    url=request.route_url(
+                        'set_likelihood', id=row.id, level=value,
+                    ),
+                    csrf_token=request.session.get_csrf_token(),
+                    checked='checked' if row.likelihood == value else '',
+                ) for value in range(1, 6)
+            )
+            return f'<td {html_params(**params)}>{data}</td>'
+        else:
+            return super().cell(column, row)
 
 
 def assessment_view(
