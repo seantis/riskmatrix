@@ -252,14 +252,14 @@ iframe.width-changed {
 
 /* Matrix table */
 
-.table .low {
+.matrix .low {
     background-color: #98FB98; /* Pale Green */
 }
 
-.table .medium {
+.matrix .medium {
     background-color: #FFFFA1; /* Light Yellow */
 }
 
-.table .high {
+.matrix .high {
     background-color: #FFA07A; /* Light Red */
 }
