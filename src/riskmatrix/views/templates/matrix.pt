@@ -23,50 +23,50 @@
                 <td class="low"></td>
                 <td class="medium"></td>
                 <td class="medium"></td>
-                <td class="high"><span class="badge rounded-pill bg-danger">1</span></td>
-                <td class="high"><span class="badge rounded-pill bg-danger">2</span></td>
+                <td class="high"><span class="badge rounded-pill bg-danger" title="TODO Risk XYZ">1</span></td>
+                <td class="high"><span class="badge rounded-pill bg-danger" title="TODO Risk XYZ">2</span></td>
             </tr>
             <tr>
                 <th>3</th>
                 <td class="low"></td>
                 <td class="medium"></td>
                 <td class="medium">
-                    <span class="badge rounded-pill bg-warning text-dark">3</span>
+                    <span class="badge rounded-pill bg-warning text-dark" title="TODO Risk XYZ">3</span>
                 </td>
                 <td class="medium">
-                    <span class="badge rounded-pill bg-warning text-dark">4</span>
+                    <span class="badge rounded-pill bg-warning text-dark" title="TODO Risk XYZ">4</span>
                 </td>
                 <td class="high"></td>
             </tr>
             <tr>
                 <th>2</th>
                 <td class="low">
-                    <span class="badge rounded-pill bg-success">13</span>
+                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">13</span>
                 </td>
                 <td class="low">
-                    <span class="badge rounded-pill bg-success">16</span>
+                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">16</span>
                 </td>
                 <td class="medium"></td>
-                <td class="medium"><span class="badge rounded-pill bg-warning text-dark">5</span></td>
+                <td class="medium"><span class="badge rounded-pill bg-warning text-dark" title="TODO Risk XYZ">5</span></td>
                 <td class="medium">
-                    <span class="badge rounded-pill bg-warning text-dark">6</span>
-                    <span class="badge rounded-pill bg-warning text-dark">7</span>
+                    <span class="badge rounded-pill bg-warning text-dark" title="TODO Risk XYZ">6</span>
+                    <span class="badge rounded-pill bg-warning text-dark" title="TODO Risk XYZ">7</span>
                 </td>
             </tr>
             <tr>
                 <th>1</th>
                 <td class="low">
-                    <span class="badge rounded-pill bg-success">11</span>
-                    <span class="badge rounded-pill bg-success">12</span>
-                    <span class="badge rounded-pill bg-success">13</span>
+                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">11</span>
+                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">12</span>
+                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">13</span>
                 </td>
                 <td class="low"></td>
                 <td class="low">
-                    <span class="badge rounded-pill bg-success">14</span>
-                    <span class="badge rounded-pill bg-success">15</span>
+                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">14</span>
+                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">15</span>
                 </td>
                 <td class="low">
-                    <span class="badge rounded-pill bg-success">15</span>
+                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">15</span>
                 </td>
                 <td class="low"></td>
             </tr>
