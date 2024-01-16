@@ -249,3 +249,17 @@ iframe.width-changed {
 .tooltip, .popover {
     white-space: pre-line;
 }
+
+/* Matrix table */
+
+.table .low {
+    background-color: #98FB98; /* Pale Green */
+}
+
+.table .medium {
+    background-color: #FFFFA1; /* Light Yellow */
+}
+
+.table .high {
+    background-color: #FFA07A; /* Light Red */
+}
