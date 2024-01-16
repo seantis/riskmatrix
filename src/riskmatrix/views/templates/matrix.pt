@@ -9,7 +9,7 @@
 
         <h1>${title}</h1>
 
-        <table width="100%" class="table">
+        <table width="100%" class="matrix table table-bordered">
             <tr>
                 <th>5</th>
                 <td class="medium"></td>
