@@ -12,7 +12,7 @@
         <table width="100%" class="matrix table table-bordered">
             <tr>
                 <th rowspan="6" class="rotate">Impact</th>
-                <th>5</th>
+                <th title="Catastrophic">5</th>
                 <td class="medium"></td>
                 <td class="medium"></td>
                 <td class="high"></td>
@@ -20,7 +20,7 @@
                 <td class="high"></td>
             </tr>
             <tr>
-                <th>4</th>
+                <th title="Major">4</th>
                 <td class="low"></td>
                 <td class="medium"></td>
                 <td class="medium"></td>
@@ -28,7 +28,7 @@
                 <td class="high"><span class="badge rounded-pill bg-danger" title="TODO Risk XYZ">2</span></td>
             </tr>
             <tr>
-                <th>3</th>
+                <th title="Moderate">3</th>
                 <td class="low"></td>
                 <td class="medium"></td>
                 <td class="medium">
@@ -40,7 +40,7 @@
                 <td class="high"></td>
             </tr>
             <tr>
-                <th>2</th>
+                <th title="Minor">2</th>
                 <td class="low">
                     <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">13</span>
                 </td>
@@ -55,7 +55,7 @@
                 </td>
             </tr>
             <tr>
-                <th>1</th>
+                <th title="Insignificant">1</th>
                 <td class="low">
                     <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">11</span>
                     <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">12</span>
@@ -73,11 +73,11 @@
             </tr>
             <tr>
                 <th></th>
-                <th>1</th>
-                <th>2</th>
-                <th>3</th>
-                <th>4</th>
-                <th>5</th>
+                <th title="Rare">1</th>
+                <th title="Unlikely">2</th>
+                <th title="Possible">3</th>
+                <th title="Likely">4</th>
+                <th title="Almost Certain">5</th>
             </tr>
             <tr>
                 <th colspan="7">Likelihood</th>
@@ -102,6 +102,7 @@
             <li>Risk xyz</li>
             <li>Risk xyz</li>
         </ol>
+
 
     </tal:block>
 
