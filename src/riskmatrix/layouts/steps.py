@@ -32,7 +32,7 @@ def steps(context: 'Organization', request: 'IRequest') -> 'RenderData':
             ),
             Step(
                 _('Generate Risk Matrix'),
-                '#'
+                request.route_url('generate_risk_matrix')
             ),
             Step(
                 _('Plan Actions'),
@@ -52,6 +52,7 @@ def show_steps(request: 'IRequest') -> bool:
         return route.name in (
             'assessment',
             'assess_impact',
-            'assess_likelihood'
+            'assess_likelihood',
+            'generate_risk_matrix',
         )
     return False

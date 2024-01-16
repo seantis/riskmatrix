@@ -14,17 +14,18 @@ from .home import home_view
 from .login import login_view
 from .logout import logout_view
 from .organization import organization_view
-from .risk import edit_risk_view
 from .risk import delete_risk_view
+from .risk import edit_risk_view
 from .risk import risks_view
 from .risk_assessment import assess_impact_view
 from .risk_assessment import assess_likelihood_view
 from .risk_assessment import assessment_view
 from .risk_assessment import edit_assessment_view
-from .risk_assessment import set_likelihood_view
+from .risk_assessment import generate_risk_matrix_view
 from .risk_assessment import set_impact_view
-from .risk_catalog import edit_risk_catalog_view
+from .risk_assessment import set_likelihood_view
 from .risk_catalog import delete_risk_catalog_view
+from .risk_catalog import edit_risk_catalog_view
 from .risk_catalog import risk_catalog_view
 
 
@@ -316,6 +317,17 @@ def includeme(config: 'Configurator') -> None:
         assess_likelihood_view,
         route_name='assess_likelihood',
         renderer='templates/table.pt',
+    )
+
+    config.add_route(
+        'generate_risk_matrix',
+        '/assessment/risk_matrix',
+        factory=organization_factory
+    )
+    config.add_view(
+        generate_risk_matrix_view,
+        route_name='generate_risk_matrix',
+        renderer='templates/matrix.pt',
     )
 
     config.add_route(
