@@ -250,6 +250,9 @@ iframe.width-changed {
     white-space: pre-line;
 }
 
+/* FIME style overwrites */
+h1 {margin-bottom: .6em}
+
 /* Matrix table */
 
 .matrix {table-layout: fixed;}
