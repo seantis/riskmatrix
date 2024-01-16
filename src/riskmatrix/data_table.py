@@ -226,6 +226,10 @@ class DataTable(Generic[RT], metaclass=DataTableMeta):
     def buttons(self, row: RT | None = None) -> list['Button']:
         return NotImplemented
 
+    def cell(self, column: DataColumn, row: RT) -> str:
+        cell_data = self._get(column.name)(row)
+        return column.cell(cell_data)
+
     def __call__(self) -> str:
         has_buttons = self.buttons() is not NotImplemented
         params = {'id': self.id, 'class': 'table data-table'}
@@ -253,8 +257,7 @@ class DataTable(Generic[RT], metaclass=DataTableMeta):
             row_id = self._get('id')(row)
             html += f'    <tr id="row-{row_id}">\n'
             for column in self.columns:
-                cell_data = self._get(column.name)(row)
-                html += f'      {column.cell(cell_data)}\n'
+                html += f'      {self.cell(column, row)}\n'
             if has_buttons:
                 html += '      <td class="text-nowrap text-end">\n'
                 for button in self.buttons(row):

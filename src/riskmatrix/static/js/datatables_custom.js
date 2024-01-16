@@ -224,5 +224,14 @@ $(function() {
             });
             return false;
         });
+        table.on('change', '.form-check-input', function(event) {
+            var target = $(this).attr('data-url')
+            var csrf_token = $(this).attr('data-csrf_token')
+            $.ajax({
+                url: target,
+                type: 'PUT',
+                headers: {'X-CSRF-Token': csrf_token},
+            });
+        });
     });
 });
