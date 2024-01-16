@@ -256,7 +256,7 @@ h1 {margin-bottom: .6em}
 /* Matrix table */
 
 .matrix {table-layout: fixed;}
-.matrix th { width: 5%; }
+.matrix th { width: 5%; text-align: center;}
 .matrix td { width: 15%; }
 
 .matrix .low {
@@ -269,4 +269,11 @@ h1 {margin-bottom: .6em}
 
 .matrix .high {
     background-color: #FFA07A; /* Light Red */
+}
+
+.matrix .rotate {
+    /* Rotate the text */
+    transform: rotate(-90deg);
+    white-space: nowrap; 
+    vertical-align: middle;
 }
