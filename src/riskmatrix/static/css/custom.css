@@ -252,6 +252,10 @@ iframe.width-changed {
 
 /* Matrix table */
 
+.matrix {table-layout: fixed;}
+.matrix th { width: 5%; }
+.matrix td { width: 15%; }
+
 .matrix .low {
     background-color: #98FB98; /* Pale Green */
 }
