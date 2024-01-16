@@ -231,6 +231,16 @@ def assess_likelihood_view(
     }
 
 
+def generate_risk_matrix_view(
+    context: 'Organization',
+    request: 'IRequest'
+) -> 'RenderData':
+
+    return {
+        'title': _('Risk Matrix'),
+    }
+
+
 def edit_assessment_view(
     context: RiskAssessment,
     request: 'IRequest'
