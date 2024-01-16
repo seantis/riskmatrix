@@ -42,7 +42,7 @@ def includeme(config: Configurator) -> None:
     config.set_security_policy(security_policy)
 
     config.set_default_permission('view')
-    config.set_default_csrf_options(require_csrf=True)
+    #config.set_default_csrf_options(require_csrf=True)
 
     config.add_request_method(authenticated_user, 'user', property=True)
     config.add_request_method(MessageQueue, 'messages', reify=True)

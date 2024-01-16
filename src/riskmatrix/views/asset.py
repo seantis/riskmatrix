@@ -135,7 +135,7 @@ class AssetForm(Form):
 
         # remove empty assessments that are no longer relevant
         for assessment in obj.assessments:
-            if assessment.risk_id in new_risk_ids:
+            if assessment.risk.id in new_risk_ids:
                 continue
 
             if assessment.modified is None:
