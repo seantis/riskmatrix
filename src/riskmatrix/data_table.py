@@ -53,7 +53,7 @@ class DataColumn:
         self,
         title:       str,
         description: str = '',
-        format_data: 'DataFormatter' = maybe_escape,
+        format_data: 'DataFormatter' = lambda data, row_id=None: maybe_escape(data),
         sort_key:    'SortKeyCallable | None' = None,
         condition:   'Callback[bool] | None' = None,
         **options:   Any
@@ -85,10 +85,12 @@ class DataColumn:
     def name(self, value: str) -> None:
         self.options['name'] = value
 
-    def data(self, data: Any) -> str | dict[str, str]:
-        display = str(self.format_data(data))
+    def data(self, row: Any) -> str | dict[str, str]:
+        print(row)
+        column_data = getattr(row, self.name)
+        display = str(self.format_data(row, column_data))
         if callable(self.sort_key):
-            return {'display': display, '@data-order': self.sort_key(data)}
+            return {'display': display, '@data-order': self.sort_key(row)}
         else:
             return display
 
@@ -115,14 +117,19 @@ class DataColumn:
             params['data_data'] = data_src
         return f'<th {html_params(**params)}>{translate(self.title)}</th>'
 
-    def cell(self, data: Any) -> str:
+    def cell(self, row, data: Any) -> str:
+        
         params = {}
         if 'class_name' in self.options:
             params['class'] = self.options['class_name']
 
         if callable(self.sort_key):
             params['data_order'] = self.sort_key(data)
-        return f'<td {html_params(**params)}>{self.format_data(data)}</td>'
+        import inspect
+        if len(inspect.signature(self.format_data).parameters) > 1:
+            return f'<td {html_params(**params)}>{self.format_data(data, row)}</td>'
+        else:
+            return f'<td {html_params(**params)}>{self.format_data(data)}</td>'
 
 
 def coerce_int(value: Any, default: int = -1) -> int:
@@ -254,7 +261,7 @@ class DataTable(Generic[RT], metaclass=DataTableMeta):
             html += f'    <tr id="row-{row_id}">\n'
             for column in self.columns:
                 cell_data = self._get(column.name)(row)
-                html += f'      {column.cell(cell_data)}\n'
+                html += f'      {column.cell(row, cell_data)}\n'
             if has_buttons:
                 html += '      <td class="text-nowrap text-end">\n'
                 for button in self.buttons(row):

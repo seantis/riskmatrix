@@ -13,6 +13,7 @@ from riskmatrix.data_table import DataColumn
 from riskmatrix.data_table import maybe_escape
 from riskmatrix.i18n import _
 from riskmatrix.static import xhr_edit_js
+from riskmatrix.views.asset import AssetTable
 from riskmatrix.wtform import Form
 from riskmatrix.wtform.validators import Disabled
 
@@ -155,20 +156,35 @@ class AssessmentTable(AssessmentBaseTable):
 
 _RADIO_TEMPLATE = Markup("""
     <div class="form-check form-check-inline">
-        <input class="form-check-input" type="radio"
-            name="{name}" id="{name}-{value}" value="{value}"/>
+        <input class="form-check-input radio-button" type="radio"
+            name="{name}" id="{name}-{value}" value="{value}"
+            data-url="{url}" {checked}/>
         <label class="form-check-label" for="{name}-{value}">{value}</label>
     </div>
 """)
 
+# create radio template but hits the 
 
-def render_impact_input(data: int | None) -> Markup:
+
+def render_impact_input(data: int | None, row) -> Markup:
     # FIXME: Maybe render_data should always have acces to the row.id
-    name = uuid4()
     return Markup('').join(
         _RADIO_TEMPLATE.format(
-            name=name,
-            value=value
+            name=row.id,
+            value=value,
+            checked='checked' if data == value else '',
+            url=f'/assessments/{row.id}/impact/{value}'
+        ) for value in range(1, 6)
+    )
+
+def render_likelihood_input(data: int | None, row) -> Markup:
+    # FIXME: Maybe render_data should always have acces to the row.id
+    return Markup('').join(
+        _RADIO_TEMPLATE.format(
+            name=row.id,
+            value=value,
+            checked='checked' if data == value else '',
+            url=f'/assessments/{row.id}/likelihood/{value}'
         ) for value in range(1, 6)
     )
 
@@ -186,7 +202,7 @@ class AssessLikelihoodTable(AssessmentBaseTable):
     asset_name = DataColumn(_('Asset'))
     likelihood = DataColumn(
         _('Likelihood'),
-        format_data=render_impact_input,
+        format_data=render_likelihood_input,
         sort_key=lambda d: -1 if d is None else d
     )
 
@@ -302,3 +318,105 @@ def set_likelihood_view(
 
     context.likelihood = level
     return {'success': ''}
+
+import io
+import matplotlib.pyplot as plt
+from pyramid.response import Response
+import base64
+import numpy as np
+
+def risk_matrix(
+    context: RiskAssessment,
+    request: 'IRequest'):
+
+
+    table = AssessmentTable(context, request)
+    # Fetch data from the database, 
+    risks = table.query().all()
+
+    # Create the plot
+    # Create the plot
+    fig = plt.figure(figsize=(10, 10))
+    plt.subplots_adjust(wspace=0, hspace=0)
+
+    nrows = 5
+    ncols = 5
+    axes = [fig.add_subplot(nrows, ncols, r * ncols + c + 1) for r in range(nrows) for c in range(ncols)]
+
+    # Set limits and remove ticks for each subplot
+    for ax in axes:
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlim(0, 5)
+        ax.set_ylim(0, 5)
+    plt.xticks([])
+    plt.yticks([])
+    plt.xlim(0, 5)
+    plt.ylim(0, 5)
+    # Add labels to the axes
+    for i in range(1, 6):
+        # Add labels to the left side (Likelihood)
+        axes[(5 - i) * ncols].set_yticks([2.5])
+        axes[(5 - i) * ncols].set_yticklabels([str(i)])
+        
+        # Add labels to the bottom (Consequence)
+        axes[ncols * (nrows - 1) + i - 1].set_xticks([2.5])
+        axes[ncols * (nrows - 1) + i - 1].set_xticklabels([str(i)])
+
+    plt.xlabel('Impact')
+    plt.ylabel('Likelihood')
+
+    nrows = 5
+    ncols = 5
+    axes = [fig.add_subplot(nrows, ncols, r * ncols + c + 1) for r in range(0, nrows) for c in range(0, ncols)]
+
+    # remove the x and y ticks and set limits
+    for ax in axes:
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlim(0, 5)
+        ax.set_ylim(0, 5)
+
+    # Define colors for each risk level
+    green = [10, 15, 16, 20, 21]  # Green boxes
+    yellow = [0, 5, 6, 11, 17, 22, 23]  # Yellow boxes
+    orange = [1, 2, 7, 12, 13, 18, 19, 24]  # Orange boxes
+    red = [3, 4, 8, 9, 14]  # Red boxes
+
+    # Set background colors for each box
+    for index in green:
+        axes[index].set_facecolor('green')
+    for index in yellow:
+        axes[index].set_facecolor('yellow')
+    for index in orange:
+        axes[index].set_facecolor('orange')
+    for index in red:
+        axes[index].set_facecolor('red')
+
+    # Plot the data from the database
+    for risk in risks:
+        # Adjust for 0-indexed plot coordinates (subtract 1)
+        plot_x = risk.likelihood - 1
+        plot_y = 4 - (risk.impact - 1)  # Invert the y-axis
+        ax_index = plot_y * ncols + plot_x
+        if 0 <= ax_index < len(axes):
+            noise_x = np.random.uniform(-0.125, 0.125, (1 ))
+            noise_y = np.random.uniform(-0.125, 0.125, (1))
+            axes[ax_index].plot(plot_x + noise_x, plot_y+noise_y, 'ko', color='black')
+
+    # Save the plot to a BytesIO object
+    img_io = io.BytesIO()
+    plt.savefig(img_io, format='png', bbox_inches='tight')
+    img_io.seek(0)
+    img_data = img_io.getvalue()
+
+    # Convert the image to Base64
+    img_base64 = base64.b64encode(img_data).decode('utf-8')
+    return {
+        'title': _('Assess Likelihood'),
+        'table': Markup(f"<img src='data:image/png;base64,{img_base64}' style='display: block; margin-left: auto; margin-right: auto;'/> "),
+        'top_buttons': [],
+    }
+
+    # Serve the image
+    return Response(body_file=img, content_type='image/png')

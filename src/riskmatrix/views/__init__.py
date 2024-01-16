@@ -22,7 +22,7 @@ from .risk_assessment import assess_likelihood_view
 from .risk_assessment import assessment_view
 from .risk_assessment import edit_assessment_view
 from .risk_assessment import set_likelihood_view
-from .risk_assessment import set_impact_view
+from .risk_assessment import set_impact_view, risk_matrix
 from .risk_catalog import edit_risk_catalog_view
 from .risk_catalog import delete_risk_catalog_view
 from .risk_catalog import risk_catalog_view
@@ -361,4 +361,15 @@ def includeme(config: 'Configurator') -> None:
         renderer='json',
         request_method='PUT',
         xhr=True
+    )
+
+    config.add_route(
+        'risk_matrix',
+        '/assessment/risk-matrix',
+        factory=organization_factory
+    )
+    config.add_view(
+        risk_matrix,
+        route_name='risk_matrix',
+        renderer='templates/table.pt',
     )

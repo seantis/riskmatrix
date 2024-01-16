@@ -226,3 +226,32 @@ $(function() {
         });
     });
 });
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    console.log("DOM fully loaded and parsed");
+    setTimeout(function() {
+        console.log(document.querySelectorAll('.radio-button'));
+        document.querySelectorAll('.radio-button').forEach(button => {
+            button.addEventListener('click', function() {
+                console.log("Radio button clicked");
+                const url = this.getAttribute('data-url');
+                const name = this.getAttribute('name');
+                const value = this.getAttribute('value');
+                console.log(`Sending PUT request to ${url} with data:`, {name, value});
+                sendPutRequest(url, name, value);
+            });
+        });
+    }, 200);
+});
+
+function sendPutRequest(url, name, value) {
+    return $.ajax({
+        'type': 'PUT',
+        'url': url,
+        'dataType': 'json',
+        'cache': false,
+        'success': function(json) {
+            
+        }
+    });
+}
