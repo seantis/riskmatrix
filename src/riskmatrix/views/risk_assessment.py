@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from markupsafe import Markup
 from pyramid.httpexceptions import HTTPFound
 from sqlalchemy import func
@@ -267,13 +268,137 @@ def assess_likelihood_view(
     }
 
 
+@dataclass
+class Cell:
+    value: str = ''
+    css_class: str = ''
+    title: str = ''
+    header: bool = False
+    colspan: int | None = None
+    rowspan: int | None = None
+
+    def __html__(self) -> str:
+        tag = 'th' if self.header else 'td'
+        params = ''
+        if self.css_class:
+            params += Markup(' class="{}"').format(self.css_class)
+        if self.title:
+            params += Markup(' title="{}"').format(self.title)
+        if self.colspan:
+            params += Markup(' colspan="{}"').format(self.colspan)
+        if self.rowspan:
+            params += Markup(' rowspan="{}"').format(self.rowspan)
+
+        return Markup('<{tag} {params}>{value}</{tag}>').format(
+            tag=tag,
+            value=self.value,
+            params=params,
+        )
+
+
 def generate_risk_matrix_view(
     context: 'Organization',
     request: 'IRequest'
 ) -> 'RenderData':
 
+    cells = [
+        [
+            Cell(value='Impact', rowspan=6, css_class='rotate', header=True),
+            Cell(value='5', title='Catastrophic', header=True),
+            Cell(css_class='medium'),
+            Cell(css_class='medium'),
+            Cell(css_class='high'),
+            Cell(css_class='high'),
+            Cell(css_class='high'),
+        ],
+        [
+            Cell(value='4', title='Major', header=True),
+            Cell(css_class='low'),
+            Cell(css_class='medium'),
+            Cell(css_class='medium'),
+            Cell(css_class='high'),
+            Cell(css_class='high'),
+        ],
+        [
+            Cell(value='3', title='Moderate', header=True),
+            Cell(css_class='low'),
+            Cell(css_class='medium'),
+            Cell(css_class='medium'),
+            Cell(css_class='medium'),
+            Cell(css_class='high'),
+        ],
+        [
+            Cell(value='2', title='Minor', header=True),
+            Cell(css_class='low'),
+            Cell(css_class='low'),
+            Cell(css_class='medium'),
+            Cell(css_class='medium'),
+            Cell(css_class='medium'),
+        ],
+        [
+            Cell(value='1', title='Insignificant', header=True),
+            Cell(css_class='low'),
+            Cell(css_class='low'),
+            Cell(css_class='low'),
+            Cell(css_class='low'),
+            Cell(css_class='low'),
+        ],
+        [
+            Cell(header=True),
+            Cell(value='1', title='Rare', header=True),
+            Cell(value='2', title='Unlikely', header=True),
+            Cell(value='3', title='Possible', header=True),
+            Cell(value='4', title='Likely', header=True),
+            Cell(value='5', title='Almost Certain', header=True),
+        ],
+        [
+
+            Cell(value='Likelihood', header=True, colspan=7),
+        ]
+    ]
+
+    session = request.dbsession
+    query = session.query(RiskAssessment)
+    query = query.filter(RiskAssessment.organization_id == context.id)
+    query = query.join(RiskAssessment.asset)
+    query = query.join(RiskAssessment.risk)
+
+    assessments = []
+    for index, assessment in enumerate(query):
+        impact = assessment.impact
+        likelihood = assessment.likelihood
+        if impact and likelihood:
+            assessments.append({
+                'nr': index + 1,
+                'name': assessment.risk.name,
+                'asset': assessment.asset.name,
+                'impact': impact,
+                'likelihood': likelihood,
+            })
+
+            row = 5 - impact
+            col = likelihood
+
+            severity = 'success'
+            if impact * likelihood >= 5:
+                severity = 'warning'
+            if impact * likelihood >= 15:
+                severity = 'danger'
+
+            cells[row][col].value += Markup(
+                ' <span class="badge rounded-pill bg-{severity} {css_class}'
+                ' title={title}">{nr}</span>'
+            ).format(
+                severity=severity,
+                nr=index + 1,
+                title=f'{assessment.asset.name}: {assessment.risk.name}',
+                css_class='text-dark' if severity == 'warning' else ''
+            )
+
     return {
         'title': _('Risk Matrix'),
+        'cells': cells,
+        'assessments': assessments,
     }
 
 
