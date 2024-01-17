@@ -118,7 +118,7 @@ class DataColumn:
         return f'<th {html_params(**params)}>{translate(self.title)}</th>'
 
     def cell(self, row, data: Any) -> str:
-        
+
         params = {}
         if 'class_name' in self.options:
             params['class'] = self.options['class_name']
