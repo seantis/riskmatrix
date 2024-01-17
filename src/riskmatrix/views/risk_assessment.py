@@ -376,15 +376,16 @@ def generate_risk_matrix_view(
                 'likelihood': likelihood,
             })
 
-            row = 5 - impact
-            col = likelihood
-
             severity = 'success'
             if impact * likelihood >= 5:
                 severity = 'warning'
             if impact * likelihood >= 15:
                 severity = 'danger'
 
+            row = 5 - impact
+            col = likelihood
+            if row == 0:
+                col += 1
             cells[row][col].value += Markup(
                 ' <span class="badge rounded-pill bg-{severity} {css_class}"'
                 ' title="{title}">{nr}</span>'
