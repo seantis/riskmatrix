@@ -274,12 +274,12 @@ h1 {margin-bottom: .6em}
 .matrix .rotate {
     /* Rotate the text */
     transform: rotate(-90deg);
-    white-space: nowrap; 
+    white-space: nowrap;
     vertical-align: middle;
 }
 
 .risk-list {
-    -webkit-column-count: 3; /* For Safari and Chrome */
-    -moz-column-count: 3;    /* For Firefox */
-    column-count: 3;         /* Standard syntax */
+    -webkit-column-count: 1; /* For Safari and Chrome */
+    -moz-column-count: 1;    /* For Firefox */
+    column-count: 1;         /* Standard syntax */
 }
