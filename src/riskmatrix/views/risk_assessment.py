@@ -163,7 +163,7 @@ _RADIO_TEMPLATE = Markup("""
     </div>
 """)
 
-# create radio template but hits the 
+# create radio template but hits the
 
 
 def render_impact_input(data: int | None, row) -> Markup:
@@ -331,7 +331,7 @@ def risk_matrix(
 
 
     table = AssessmentTable(context, request)
-    # Fetch data from the database, 
+    # Fetch data from the database,
     risks = table.query().all()
 
     # Create the plot
@@ -358,7 +358,7 @@ def risk_matrix(
         # Add labels to the left side (Likelihood)
         axes[(5 - i) * ncols].set_yticks([2.5])
         axes[(5 - i) * ncols].set_yticklabels([str(i)])
-        
+
         # Add labels to the bottom (Consequence)
         axes[ncols * (nrows - 1) + i - 1].set_xticks([2.5])
         axes[ncols * (nrows - 1) + i - 1].set_xticklabels([str(i)])
@@ -417,6 +417,3 @@ def risk_matrix(
         'table': Markup(f"<img src='data:image/png;base64,{img_base64}' style='display: block; margin-left: auto; margin-right: auto;'/> "),
         'top_buttons': [],
     }
-
-    # Serve the image
-    return Response(body_file=img, content_type='image/png')

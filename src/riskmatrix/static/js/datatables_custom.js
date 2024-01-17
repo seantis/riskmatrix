@@ -251,7 +251,7 @@ function sendPutRequest(url, name, value) {
         'dataType': 'json',
         'cache': false,
         'success': function(json) {
-            
+
         }
     });
 }
