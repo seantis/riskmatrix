@@ -364,10 +364,12 @@ def generate_risk_matrix_view(
     query = query.join(RiskAssessment.risk)
 
     assessments = []
-    for index, assessment in enumerate(query):
+    index = 0
+    for assessment in query:
         impact = assessment.impact
         likelihood = assessment.likelihood
         if impact and likelihood:
+            index += 1
             assessments.append({
                 'nr': index + 1,
                 'name': assessment.risk.name,
@@ -391,7 +393,7 @@ def generate_risk_matrix_view(
                 ' title="{title}">{nr}</span>'
             ).format(
                 severity=severity,
-                nr=index + 1,
+                nr=index,
                 title=f'{assessment.asset.name}: {assessment.risk.name}',
                 css_class='text-dark' if severity == 'warning' else ''
             )
