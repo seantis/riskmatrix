@@ -10,99 +10,16 @@
         <h1>${title}</h1>
 
         <table width="100%" class="matrix table table-bordered">
-            <tr>
-                <th rowspan="6" class="rotate">Impact</th>
-                <th title="Catastrophic">5</th>
-                <td class="medium"></td>
-                <td class="medium"></td>
-                <td class="high"></td>
-                <td class="high"></td>
-                <td class="high"></td>
-            </tr>
-            <tr>
-                <th title="Major">4</th>
-                <td class="low"></td>
-                <td class="medium"></td>
-                <td class="medium"></td>
-                <td class="high"><span class="badge rounded-pill bg-danger" title="TODO Risk XYZ">1</span></td>
-                <td class="high"><span class="badge rounded-pill bg-danger" title="TODO Risk XYZ">2</span></td>
-            </tr>
-            <tr>
-                <th title="Moderate">3</th>
-                <td class="low"></td>
-                <td class="medium"></td>
-                <td class="medium">
-                    <span class="badge rounded-pill bg-warning text-dark" title="TODO Risk XYZ">3</span>
-                </td>
-                <td class="medium">
-                    <span class="badge rounded-pill bg-warning text-dark" title="TODO Risk XYZ">4</span>
-                </td>
-                <td class="high"></td>
-            </tr>
-            <tr>
-                <th title="Minor">2</th>
-                <td class="low">
-                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">13</span>
-                </td>
-                <td class="low">
-                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">16</span>
-                </td>
-                <td class="medium"></td>
-                <td class="medium"><span class="badge rounded-pill bg-warning text-dark" title="TODO Risk XYZ">5</span></td>
-                <td class="medium">
-                    <span class="badge rounded-pill bg-warning text-dark" title="TODO Risk XYZ">6</span>
-                    <span class="badge rounded-pill bg-warning text-dark" title="TODO Risk XYZ">7</span>
-                </td>
-            </tr>
-            <tr>
-                <th title="Insignificant">1</th>
-                <td class="low">
-                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">11</span>
-                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">12</span>
-                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">13</span>
-                </td>
-                <td class="low"></td>
-                <td class="low">
-                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">14</span>
-                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">15</span>
-                </td>
-                <td class="low">
-                    <span class="badge rounded-pill bg-success" title="TODO Risk XYZ">15</span>
-                </td>
-                <td class="low"></td>
-            </tr>
-            <tr>
-                <th></th>
-                <th title="Rare">1</th>
-                <th title="Unlikely">2</th>
-                <th title="Possible">3</th>
-                <th title="Likely">4</th>
-                <th title="Almost Certain">5</th>
-            </tr>
-            <tr>
-                <th colspan="7">Likelihood</th>
+            <tr tal:repeat="row cells">
+                <tal:block tal:repeat="cell row">
+                    ${cell}
+                </tal:block>
             </tr>
         </table>
 
         <ol class="risk-list">
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
-            <li>Risk xyz</li>
+            <li tal:repeat="item assessments">${item['asset']}: ${item['name']}</li>
         </ol>
-
 
     </tal:block>
 
