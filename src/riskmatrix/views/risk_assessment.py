@@ -413,7 +413,7 @@ def risk_matrix(
     # Convert the image to Base64
     img_base64 = base64.b64encode(img_data).decode('utf-8')
     return {
-        'title': _('Assess Likelihood'),
+        'title': _('Risk Matrix'),
         'table': Markup(f"<img src='data:image/png;base64,{img_base64}' style='display: block; margin-left: auto; margin-right: auto;'/> "),
         'top_buttons': [],
     }
