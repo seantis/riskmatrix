@@ -386,8 +386,8 @@ def generate_risk_matrix_view(
                 severity = 'danger'
 
             cells[row][col].value += Markup(
-                ' <span class="badge rounded-pill bg-{severity} {css_class}'
-                ' title={title}">{nr}</span>'
+                ' <span class="badge rounded-pill bg-{severity} {css_class}"'
+                ' title="{title}">{nr}</span>'
             ).format(
                 severity=severity,
                 nr=index + 1,
