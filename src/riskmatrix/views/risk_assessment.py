@@ -325,22 +325,18 @@ from pyramid.response import Response
 import base64
 import numpy as np
 
-def risk_matrix(
-    context: RiskAssessment,
-    request: 'IRequest'):
-
+def risk_matrix(context: RiskAssessment, request: 'IRequest'):
 
     table = AssessmentTable(context, request)
-    # Fetch data from the database,
+    # Fetch data from the database
     risks = table.query().all()
 
     # Create the plot
     # Create the plot
-    fig = plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(6, 6))  # Increase the figure size to accommodate the table
     plt.subplots_adjust(wspace=0, hspace=0)
 
-    nrows = 5
-    ncols = 5
+    nrows, ncols = 5, 5
     axes = [fig.add_subplot(nrows, ncols, r * ncols + c + 1) for r in range(nrows) for c in range(ncols)]
 
     # Set limits and remove ticks for each subplot
@@ -349,62 +345,27 @@ def risk_matrix(
         ax.set_yticks([])
         ax.set_xlim(0, 5)
         ax.set_ylim(0, 5)
-    plt.xticks([])
-    plt.yticks([])
-    plt.xlim(0, 5)
-    plt.ylim(0, 5)
-    # Add labels to the axes
-    for i in range(1, 6):
-        # Add labels to the left side (Likelihood)
-        axes[(5 - i) * ncols].set_yticks([2.5])
-        axes[(5 - i) * ncols].set_yticklabels([str(i)])
-
-        # Add labels to the bottom (Consequence)
-        axes[ncols * (nrows - 1) + i - 1].set_xticks([2.5])
-        axes[ncols * (nrows - 1) + i - 1].set_xticklabels([str(i)])
-
-    plt.xlabel('Impact')
-    plt.ylabel('Likelihood')
-
-    nrows = 5
-    ncols = 5
-    axes = [fig.add_subplot(nrows, ncols, r * ncols + c + 1) for r in range(0, nrows) for c in range(0, ncols)]
-
-    # remove the x and y ticks and set limits
-    for ax in axes:
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_xlim(0, 5)
-        ax.set_ylim(0, 5)
 
     # Define colors for each risk level
-    green = [10, 15, 16, 20, 21]  # Green boxes
-    yellow = [0, 5, 6, 11, 17, 22, 23]  # Yellow boxes
-    orange = [1, 2, 7, 12, 13, 18, 19, 24]  # Orange boxes
-    red = [3, 4, 8, 9, 14]  # Red boxes
+    green, yellow, orange, red = [10, 15, 16, 20, 21], [0, 5, 6, 11, 17, 22, 23], [1, 2, 7, 12, 13, 18, 19, 24], [3, 4, 8, 9, 14]
 
     # Set background colors for each box
-    for index in green:
-        axes[index].set_facecolor('green')
-    for index in yellow:
-        axes[index].set_facecolor('yellow')
-    for index in orange:
-        axes[index].set_facecolor('orange')
-    for index in red:
-        axes[index].set_facecolor('red')
+    for index, color in zip([green, yellow, orange, red], ['green', 'yellow', 'orange', 'red']):
+        for i in index:
+            axes[i].set_facecolor(color)
 
-    # Plot the data from the database
-    for risk in risks:
-        # Adjust for 0-indexed plot coordinates (subtract 1)
+    # Plot the data from the database and add annotations
+    for i, risk in enumerate(risks):
         plot_x = risk.likelihood - 1
         plot_y = 4 - (risk.impact - 1)  # Invert the y-axis
         ax_index = plot_y * ncols + plot_x
         if 0 <= ax_index < len(axes):
-            noise_x = np.random.uniform(-0.125, 0.125, (1 ))
-            noise_y = np.random.uniform(-0.125, 0.125, (1))
-            axes[ax_index].plot(plot_x + noise_x, plot_y+noise_y, 'ko', color='black')
-
-    # Save the plot to a BytesIO object
+            noise_x = np.random.uniform(-0.125, 0.125)
+            noise_y = np.random.uniform(-0.125, 0.125)
+            axes[ax_index].plot(plot_x + noise_x, plot_y + noise_y, 'ko', color='black', markersize=12)  # Increase markersize
+            axes[ax_index].text(plot_x + noise_x, plot_y + noise_y - 0.05, str(i + 1), color='white', ha='center', va='center', fontsize=8)  # Decrease fontsize
+        # Save the plot to a BytesIO object
+            
     img_io = io.BytesIO()
     plt.savefig(img_io, format='png', bbox_inches='tight')
     img_io.seek(0)
@@ -414,6 +375,6 @@ def risk_matrix(
     img_base64 = base64.b64encode(img_data).decode('utf-8')
     return {
         'title': _('Risk Matrix'),
-        'table': Markup(f"<img src='data:image/png;base64,{img_base64}' style='display: block; margin-left: auto; margin-right: auto;'/> "),
+        'table': Markup(f"<img src='data:image/png;base64,{img_base64}' style='display: block; margin-left: auto; margin-right: auto; padding-bottom:32px;'/> <div style='padding: 8px;'></<div> ") + table,
         'top_buttons': [],
     }
