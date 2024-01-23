@@ -58,3 +58,4 @@ datatable_bootstrap = js(
 )
 datatable_js = js('datatables_custom.js', depends=[datatable_bootstrap])
 xhr_edit_js = js('xhr_edit.js', depends=[datatable_js])
+plotly_js = js('plotly.min.js', depends=[datatable_js])

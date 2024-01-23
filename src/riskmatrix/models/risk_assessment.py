@@ -146,3 +146,7 @@ class RiskAssessment(Base):
         return [
             (Allow, f'org_{self.risk.organization_id}', ['view']),
         ]
+
+
+class RiskMatrixAssessment(RiskAssessment):
+    nr: Mapped[int | None] = mapped_column(default=None)
