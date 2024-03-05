@@ -20,8 +20,7 @@ from riskmatrix.wtform import Form
 from riskmatrix.wtform.validators import Disabled
 
 
-from typing import Any, TYPE_CHECKING
-
+from typing import Any, Generator, TYPE_CHECKING
 if TYPE_CHECKING:
     from pyramid.interfaces import IRequest
     from sqlalchemy.orm.query import Query
@@ -32,71 +31,95 @@ if TYPE_CHECKING:
     from riskmatrix.types import XHRData
     from riskmatrix.types import RenderData
 
-    _Q = TypeVar("_Q", bound=Query[Any])
+    _Q = TypeVar('_Q', bound=Query[Any])
 
 
 class AssessmentForm(Form):
-    title = _("Edit Risk Assessment")
+
+    title = _('Edit Risk Assessment')
 
     def __init__(
         self,
         context: RiskAssessment | None,
-        request: "IRequest",
-        prefix: str = "edit-xhr",
+        request: 'IRequest',
+        prefix:  str = 'edit-xhr'
     ) -> None:
+
         session = request.dbsession
         super().__init__(
             request.POST,
             obj=context,
             prefix=prefix,
-            meta={"context": context, "dbsession": session},
+            meta={
+                'context': context,
+                'dbsession': session
+            }
         )
 
-    name = StringField(label=_("Name"), validators=(Disabled(),))
-
-    description = TextAreaField(
-        label=_("Description"),
-        validators=(Disabled(),)
+    name = StringField(
+        label=_('Name'),
+        validators=(
+            Disabled(),
+        )
     )
 
-    category = StringField(label=_("Category"), validators=(Disabled(),))
-
-    asset_name = StringField(label=_("Asset"), validators=(Disabled(),))
-
-
-def assessment_buttons(assessment: RiskAssessment, request: "IRequest") -> list[Button]:
-    return [
-        Button(
-            url=request.route_url("edit_assessment", id=assessment.id),
-            icon="edit",
-            description=_("Edit Risk"),
-            css_class="btn-sm btn-secondary",
-            modal="#edit-xhr",
+    description = TextAreaField(
+        label=_('Description'),
+        validators=(
+            Disabled(),
         )
-    ]
+    )
+
+    category = StringField(
+        label=_('Category'),
+        validators=(
+            Disabled(),
+        )
+    )
+
+    asset_name = StringField(
+        label=_('Asset'),
+        validators=(
+            Disabled(),
+        )
+    )
+
+
+def assessment_buttons(
+    assessment: RiskAssessment,
+    request: 'IRequest'
+) -> list[Button]:
+
+    return [Button(
+        url=request.route_url('edit_assessment', id=assessment.id),
+        icon='edit',
+        description=_('Edit Risk'),
+        css_class='btn-sm btn-secondary',
+        modal='#edit-xhr',
+    )]
 
 
 class AssessmentBaseTable(AJAXDataTable[RiskAssessment]):
     default_options = {
-        "length_menu": [[25, 50, 100, -1], [25, 50, 100, "All"]],
-        "order": [[0, "asc"]],  # corresponds to column name
+        'length_menu': [[25, 50, 100, -1], [25, 50, 100, 'All']],
+        'order': [[0, 'asc']]  # corresponds to column name
     }
 
-    name = DataColumn(_("Name"))
+    name = DataColumn(_('Name'))
 
-    def apply_static_filters(self, query: "_Q") -> "_Q":
+    def apply_static_filters(self, query: '_Q') -> '_Q':
         query = query.join(RiskAssessment.risk)
         return query.filter(RiskAssessment.organization_id == self.context.id)
 
     def total_records(self) -> int:
-        if not hasattr(self, "_total_records"):
+        if not hasattr(self, '_total_records'):
             session = self.request.dbsession
             query = session.query(func.count(RiskAssessment.id))
             query = self.apply_static_filters(query)
             self._total_records: int = query.scalar()
         return self._total_records
 
-    def query(self) -> "Query[RiskAssessment]":
+    def query(self) -> 'Query[RiskAssessment]':
         session = self.request.dbsession
         query = session.query(RiskAssessment)
         query = query.join(RiskAssessment.asset)
@@ -114,15 +137,19 @@ class AssessmentBaseTable(AJAXDataTable[RiskAssessment]):
 
 
 class AssessmentTable(AssessmentBaseTable):
-    description = DataColumn(_("Description"), class_name="visually-hidden")
-    category = DataColumn(_("Category"))
-    asset_name = DataColumn(_("Asset"))
+    description = DataColumn(_('Description'), class_name='visually-hidden')
+    category = DataColumn(_('Category'))
+    asset_name = DataColumn(_('Asset'))
 
-    def __init__(self, org: "Organization", request: "IRequest") -> None:
-        super().__init__(org, request, id="risks-table")
+    def __init__(self, org: 'Organization', request: 'IRequest') -> None:
+        super().__init__(org, request, id='risks-table')
         xhr_edit_js.need()
 
-    def buttons(self, assessment: RiskAssessment | None = None) -> list[Button]:
+    def buttons(
+        self,
+        assessment: RiskAssessment | None = None
+    ) -> list[Button]:
+
         if assessment is None:
             return []
 
@@ -142,13 +169,12 @@ class AssessmentOverviewTable(AssessmentBaseTable):
         super().__init__(org, request, id="risks-table")
         xhr_edit_js.need()
 
-    def query(self) -> "Query[RiskMatrixAssessment]":
+    def query(self) -> "Generator[RiskMatrixAssessment]":
         query = super().query()
 
-        return map(
-            lambda entry: setattr(entry[1], "nr", entry[0] + 1) or entry[1],
-            enumerate(query),
-        )
+        for idx, item in enumerate(query):
+            item.nr = idx + 1
+            yield item
 
 
 _RADIO_TEMPLATE = Markup(
@@ -164,114 +190,121 @@ _RADIO_TEMPLATE = Markup(
 
 
 class AssessImpactTable(AssessmentBaseTable):
-    asset_name = DataColumn(_("Asset"))
-    impact = DataColumn(_("Impact"), sort_key=lambda d: -1 if d is None else d)
+    asset_name = DataColumn(_('Asset'))
+    impact = DataColumn(
+        _('Impact'),
+        sort_key=lambda d: -1 if d is None else d
+    )
 
     def cell(self, column: DataColumn, row: RiskAssessment) -> str:
-        if column.name == "impact":
+        if column.name == 'impact':
             cell_data = self._get(column.name)(row)
             params = {}
-            if "class_name" in column.options:
-                params["class"] = column.options["class_name"]
+            if 'class_name' in column.options:
+                params['class'] = column.options['class_name']
             if callable(column.sort_key):
-                params["data_order"] = column.sort_key(cell_data)
+                params['data_order'] = column.sort_key(cell_data)
             request = self.request
-            data = Markup("").join(
+            data = Markup('').join(
                 _RADIO_TEMPLATE.format(
                     name=row.id,
                     value=value,
                     url=request.route_url(
-                        "set_impact",
-                        id=row.id,
-                        level=value,
+                        'set_impact', id=row.id, level=value,
                     ),
                     csrf_token=request.session.get_csrf_token(),
-                    checked="checked" if row.impact == value else "",
-                )
-                for value in range(1, 6)
+                    checked='checked' if row.impact == value else '',
+                ) for value in range(1, 6)
             )
-            return f"<td {html_params(**params)}>{data}</td>"
+            return f'<td {html_params(**params)}>{data}</td>'
         else:
             return super().cell(column, row)
 
 
 class AssessLikelihoodTable(AssessmentBaseTable):
-    asset_name = DataColumn(_("Asset"))
+    asset_name = DataColumn(_('Asset'))
     likelihood = DataColumn(
-        _("Likelihood"),
+        _('Likelihood'),
         sort_key=lambda d: -1 if d is None else d
     )
 
     def cell(self, column: DataColumn, row: RiskAssessment) -> str:
-        if column.name == "likelihood":
+        if column.name == 'likelihood':
             cell_data = self._get(column.name)(row)
             params = {}
-            if "class_name" in column.options:
-                params["class"] = column.options["class_name"]
+            if 'class_name' in column.options:
+                params['class'] = column.options['class_name']
             if callable(column.sort_key):
-                params["data_order"] = column.sort_key(cell_data)
+                params['data_order'] = column.sort_key(cell_data)
             request = self.request
-            data = Markup("").join(
+            data = Markup('').join(
                 _RADIO_TEMPLATE.format(
                     name=row.id,
                     value=value,
                     url=request.route_url(
-                        "set_likelihood",
-                        id=row.id,
-                        level=value,
+                        'set_likelihood', id=row.id, level=value,
                     ),
                     csrf_token=request.session.get_csrf_token(),
-                    checked="checked" if row.likelihood == value else "",
-                )
-                for value in range(1, 6)
+                    checked='checked' if row.likelihood == value else '',
+                ) for value in range(1, 6)
             )
-            return f"<td {html_params(**params)}>{data}</td>"
+            return f'<td {html_params(**params)}>{data}</td>'
         else:
             return super().cell(column, row)
 
 
-def assessment_view(context: "Organization", request: "IRequest") -> "RenderData":
+def assessment_view(
+    context: 'Organization',
+    request: 'IRequest'
+) -> 'RenderData':
+
     table = AssessmentTable(context, request)
     return {
-        "title": _("Identify Risks"),
-        "table": table,
-        "top_buttons": [],
-        "edit_form": AssessmentForm(None, request),
+        'title': _('Identify Risks'),
+        'table': table,
+        'top_buttons': [],
+        'edit_form': AssessmentForm(None, request),
     }
 
 
-def assess_impact_view(context: "Organization", request: "IRequest") -> "RenderData":
+def assess_impact_view(
+    context: 'Organization',
+    request: 'IRequest'
+) -> 'RenderData':
+
     table = AssessImpactTable(context, request)
     return {
-        "title": _("Assess Impact"),
-        "table": table,
-        "top_buttons": [],
+        'title': _('Assess Impact'),
+        'table': table,
+        'top_buttons': [],
     }
 
 
 def assess_likelihood_view(
-    context: "Organization", request: "IRequest"
-) -> "RenderData":
+    context: 'Organization',
+    request: 'IRequest'
+) -> 'RenderData':
+
     table = AssessLikelihoodTable(context, request)
     return {
-        "title": _("Assess Likelihood"),
-        "table": table,
-        "top_buttons": [],
+        'title': _('Assess Likelihood'),
+        'table': table,
+        'top_buttons': [],
     }
 
 
 @dataclass
 class Cell:
-    value: str = ""
-    css_class: str = ""
-    title: str = ""
+    value: str = ''
+    css_class: str = ''
+    title: str = ''
     header: bool = False
     colspan: int | None = None
     rowspan: int | None = None
 
     def __html__(self) -> str:
-        tag = "th" if self.header else "td"
-        params = ""
+        tag = 'th' if self.header else 'td'
+        params = ''
         if self.css_class:
             params += Markup(' class="{}"').format(self.css_class)
         if self.title:
@@ -281,26 +314,11 @@ class Cell:
         if self.rowspan:
             params += Markup(' rowspan="{}"').format(self.rowspan)
 
-        return Markup("<{tag} {params}>{value}</{tag}>").format(
+        return Markup('<{tag} {params}>{value}</{tag}>').format(
             tag=tag,
             value=self.value,
             params=params,
         )
-
-
-def generate_risk_matrix_view(
-    context: "Organization", request: "IRequest"
-) -> "RenderData":
-    table = AssessmentOverviewTable(context, request)
-
-    return {
-        "title": _("Risk Matrix"),
-        "plot": Markup(
-            "<style>.plotly-graph-div { margin-left: auto; margin-right: auto; }</style>"
-        )
-        + Markup(plot_risk_matrix(table.query())),
-        "table": table,
-    }
 
 
 def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
@@ -318,64 +336,72 @@ def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
     for color, indices in colors.items():
         for index in indices:
             i, j = divmod(index, 5)
-            rect_text = f"Color: {color}"  # Custom hover text for rectangles
+
             fig.add_shape(
                 type="rect",
                 x0=j,
                 y0=4 - i,
                 x1=j + 1,
                 y1=5 - i,
-                line=dict(color="white", width=0),
+                line={"color": "white", "width": 0},
                 fillcolor=color,
                 layer="below",
             )
 
     # Plot points
     for risk in list(risks):
-        i = risk.nr
-        x, y = risk.likelihood - 1, 4 - (risk.impact - 1)
+        if risk.likelihood and risk.impact:
+            x, y = float(risk.likelihood - 1), float(4 - (risk.impact - 1))
 
-        # Adjust the position within the cell, ensuring it's within the cell boundaries
-        noise_x, noise_y = np.random.uniform(0.1, 0.9), np.random.uniform(0.1, 0.9)
-        x, y = float(x) + noise_x, float(y) + noise_y
+            # Adjust the position within the cell to avoid overlap
+            noise_x = np.random.uniform(0.1, 0.9)
+            noise_y = np.random.uniform(0.1, 0.9)
+            x, y = x + noise_x, y + noise_y
 
-        fig.add_trace(
-            go.Scatter(
-                x=[x],
-                y=[y],
-                text=[str(risk.nr)],
-                name="",
-                mode="markers+text",
-                marker=dict(color="black", size=18),  # Increased size for visibility
-                textposition="middle center",
-                hoverinfo="text",
-                hovertemplate=f"{risk.nr} {risk.name} (Impact: {risk.impact} Likelihood: {risk.likelihood})",
-                textfont=dict(color="white"),
+            fig.add_trace(
+                go.Scatter(
+                    x=[x],
+                    y=[y],
+                    text=[str(risk.nr)],
+                    name="",
+                    mode="markers+text",
+                    marker={"color": "black", "size": 18},
+                    textposition="middle center",
+                    hoverinfo="text",
+                    hovertemplate=f"{risk.nr} {risk.name} \
+                    (Impact: {risk.impact} Likelihood: {risk.likelihood})",
+                    textfont={"color": "white"},
+                )
             )
-        )
 
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
 
     # Update layout
     fig.update_layout(
-        xaxis=dict(
-            showgrid=False, zeroline=False, showticklabels=False, range=[-0.5, 5]
-        ),
-        yaxis=dict(
-            showgrid=False, zeroline=False, showticklabels=False, range=[-0.5, 5]
-        ),
+        xaxis={
+            "showgrid": False,
+            "zeroline": False,
+            "showticklabels": False,
+            "range": [-0.5, 5]
+        },
+        yaxis={
+            "showgrid": False,
+            "zeroline": False,
+            "showticklabels": False,
+            "range": [-0.5, 5]
+        },
         showlegend=False,
         width=700,
         height=700,
-        margin=dict(l=5, r=5, t=5, b=5),  # Adjusted margins
+        margin={"l": 5, "r": 5, "t": 5, "b": 5},  # Adjusted margins
         paper_bgcolor="white",
         plot_bgcolor="white",
     )
 
     # Add axis labels
     fig.add_annotation(
-        x=2.5, y=-0.2, text="Impact", showarrow=False, font=dict(size=20)
+        x=2.5, y=-0.2, text="Impact", showarrow=False, font={"size": 20}
     )
     fig.add_annotation(
         x=-0.2,
@@ -383,43 +409,63 @@ def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
         text="Likelihood",
         showarrow=False,
         textangle=-90,
-        font=dict(size=20),
+        font={"size": 20},
     )
 
     return fig.to_html(
         full_html=False,
-        include_plotlyjs=False,
-        config={"modeBarButtonsToRemove": ["zoom", "pan", "select", "lasso2d"]},
+        include_plotlyjs=True,
+        config={
+            "modeBarButtonsToRemove": ["zoom", "pan", "select", "lasso2d"]
+        },
     )
 
 
+def generate_risk_matrix_view(
+    context: "Organization", request: "IRequest"
+) -> "RenderData":
+    table = AssessmentOverviewTable(context, request)
+
+    return {
+        "title": _("Risk Matrix"),
+        "plot": Markup(plot_risk_matrix(table.query())),  # noqa: MS001
+        "table": table,
+    }
+
+
 def edit_assessment_view(
-    context: RiskAssessment, request: "IRequest"
-) -> "MixedDataOrRedirect":
+    context: RiskAssessment,
+    request: 'IRequest'
+) -> 'MixedDataOrRedirect':
+
     form = AssessmentForm(context, request)
     organization_id = context.risk.organization_id
-    target_url = request.route_url("assessment", id=organization_id)
-    if request.method == "POST" and form.validate():
+    target_url = request.route_url('assessment', id=organization_id)
+    if request.method == 'POST' and form.validate():
         form.populate_obj(context)
         if request.is_xhr:
             return {
-                "name": maybe_escape(context.name),
-                "description": maybe_escape(context.description),
-                "category": maybe_escape(context.category),
+                'name': maybe_escape(context.name),
+                'description': maybe_escape(context.description),
+                'category': maybe_escape(context.category),
             }
         else:
             return HTTPFound(location=target_url)
     if request.is_xhr:
-        return {"errors": form.errors}
+        return {'errors': form.errors}
     else:
         return {
-            "form": form,
-            "target_url": target_url,
+            'form': form,
+            'target_url': target_url,
         }
 
 
-def set_impact_view(context: RiskAssessment, request: "IRequest") -> "XHRData":
-    raw_level = request.matchdict["level"]
+def set_impact_view(
+    context: RiskAssessment,
+    request: 'IRequest'
+) -> 'XHRData':
+
+    raw_level = request.matchdict['level']
     try:
         level = int(raw_level)
     except (ValueError, TypeError):
@@ -427,18 +473,22 @@ def set_impact_view(context: RiskAssessment, request: "IRequest") -> "XHRData":
 
     if level not in range(1, 6):
         return {
-            "error": _(
+            'error': _(
                 'Invalid impact level "${level}" provided.',
-                mapping={"level": raw_level},
+                mapping={'level': raw_level}
             )
         }
 
     context.impact = level
-    return {"success": ""}
+    return {'success': ''}
 
 
-def set_likelihood_view(context: RiskAssessment, request: "IRequest") -> "XHRData":
-    raw_level = request.matchdict["level"]
+def set_likelihood_view(
+    context: RiskAssessment,
+    request: 'IRequest'
+) -> 'XHRData':
+
+    raw_level = request.matchdict['level']
     try:
         level = int(raw_level)
     except (ValueError, TypeError):
@@ -446,11 +496,11 @@ def set_likelihood_view(context: RiskAssessment, request: "IRequest") -> "XHRDat
 
     if level not in range(1, 6):
         return {
-            "error": _(
+            'error': _(
                 'Invalid likelihood level "${level}" provided.',
-                mapping={"level": raw_level},
+                mapping={'level': raw_level}
             )
         }
 
     context.likelihood = level
-    return {"success": ""}
+    return {'success': ''}

@@ -49,5 +49,6 @@ zope.interface==6.1
 zope.schema==7.0.1
 zope.sqlalchemy==3.1
 numpy==1.26.3
+plotly==5.18.0
 
 -e .
