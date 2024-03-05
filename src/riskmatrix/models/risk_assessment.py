@@ -17,7 +17,7 @@ from riskmatrix.orm.meta import UUIDStr
 from riskmatrix.orm.meta import UUIDStrPK
 
 
-from typing import Any
+from typing import Any, ClassVar
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from riskmatrix.types import ACL
@@ -149,4 +149,4 @@ class RiskAssessment(Base):
 
 
 class RiskMatrixAssessment(RiskAssessment):
-    nr: Mapped[int | None] = mapped_column(default=None)
+    nr: ClassVar[int]

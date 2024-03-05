@@ -428,7 +428,7 @@ def generate_risk_matrix_view(
 
     return {
         "title": _("Risk Matrix"),
-        "plot": Markup(plot_risk_matrix(table.query())),  # noqa: MS001
+        "plot": Markup(plot_risk_matrix(table.query()).replace('<script', f'<script nonce="{request.csp_nonce}"')),  # noqa: MS001
         "table": table,
     }
 
