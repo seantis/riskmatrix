@@ -5,21 +5,19 @@
              xmlns:i18n="http://xml.zope.org/namespaces/i18n"
              i18n:domain="riskmatrix">
 
+
     <tal:block metal:fill-slot="content">
 
         <h1>${title}</h1>
 
-        <table width="100%" class="matrix table table-bordered">
-            <tr tal:repeat="row cells">
-                <tal:block tal:repeat="cell row">
-                    ${cell}
-                </tal:block>
-            </tr>
-        </table>
 
-        <ol class="risk-list">
-            <li tal:repeat="item assessments">${item['asset']}: ${item['name']}</li>
-        </ol>
+        ${plot}
+
+
+        <div style="display: block; padding: 24px"></div>
+
+        ${table}
+
 
     </tal:block>
 

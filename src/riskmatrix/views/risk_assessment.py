@@ -6,9 +6,11 @@ from sqlalchemy.orm import contains_eager
 from wtforms import StringField
 from wtforms import TextAreaField
 from wtforms.widgets import html_params
+import plotly.graph_objects as go
+import numpy as np
 
 from riskmatrix.controls import Button
-from riskmatrix.models import RiskAssessment
+from riskmatrix.models import RiskAssessment, RiskMatrixAssessment
 from riskmatrix.data_table import AJAXDataTable
 from riskmatrix.data_table import DataColumn
 from riskmatrix.data_table import maybe_escape
@@ -18,7 +20,7 @@ from riskmatrix.wtform import Form
 from riskmatrix.wtform.validators import Disabled
 
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, Generator, TYPE_CHECKING
 if TYPE_CHECKING:
     from pyramid.interfaces import IRequest
     from sqlalchemy.orm.query import Query
@@ -154,14 +156,37 @@ class AssessmentTable(AssessmentBaseTable):
         return assessment_buttons(assessment, self.request)
 
 
-_RADIO_TEMPLATE = Markup("""
+class AssessmentOverviewTable(AssessmentBaseTable):
+    nr = DataColumn(_("Nr."))
+    name = DataColumn(_("Name"))
+    description = DataColumn(_("Description"), class_name="visually-hidden")
+    category = DataColumn(_("Category"))
+    asset_name = DataColumn(_("Asset"))
+    likelihood = DataColumn(_("Likelihood"))
+    impact = DataColumn(_("Impact"))
+
+    def __init__(self, org: "Organization", request: "IRequest") -> None:
+        super().__init__(org, request, id="risks-table")
+        xhr_edit_js.need()
+
+    def query(self) -> "Generator[RiskMatrixAssessment]":
+        query = super().query()
+
+        for idx, item in enumerate(query):
+            item.nr = idx + 1
+            yield item
+
+
+_RADIO_TEMPLATE = Markup(
+    """
     <div class="form-check form-check-inline">
         <input class="form-check-input" type="radio"
             name="{name}" id="{name}-{value}" value="{value}"
             data-url="{url}" data-csrf_token="{csrf_token}" {checked}/>
         <label class="form-check-label" for="{name}-{value}">{value}</label>
     </div>
-""")
+"""
+)
 
 
 class AssessImpactTable(AssessmentBaseTable):
@@ -296,112 +321,115 @@ class Cell:
         )
 
 
-def generate_risk_matrix_view(
-    context: 'Organization',
-    request: 'IRequest'
-) -> 'RenderData':
+def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
+    fig = go.Figure()
 
-    cells = [
-        [
-            Cell(value='Impact', rowspan=6, css_class='rotate', header=True),
-            Cell(value='5', title='Catastrophic', header=True),
-            Cell(css_class='medium'),
-            Cell(css_class='medium'),
-            Cell(css_class='high'),
-            Cell(css_class='high'),
-            Cell(css_class='high'),
-        ],
-        [
-            Cell(value='4', title='Major', header=True),
-            Cell(css_class='low'),
-            Cell(css_class='medium'),
-            Cell(css_class='medium'),
-            Cell(css_class='high'),
-            Cell(css_class='high'),
-        ],
-        [
-            Cell(value='3', title='Moderate', header=True),
-            Cell(css_class='low'),
-            Cell(css_class='medium'),
-            Cell(css_class='medium'),
-            Cell(css_class='medium'),
-            Cell(css_class='high'),
-        ],
-        [
-            Cell(value='2', title='Minor', header=True),
-            Cell(css_class='low'),
-            Cell(css_class='low'),
-            Cell(css_class='medium'),
-            Cell(css_class='medium'),
-            Cell(css_class='medium'),
-        ],
-        [
-            Cell(value='1', title='Insignificant', header=True),
-            Cell(css_class='low'),
-            Cell(css_class='low'),
-            Cell(css_class='low'),
-            Cell(css_class='low'),
-            Cell(css_class='low'),
-        ],
-        [
-            Cell(header=True),
-            Cell(value='1', title='Rare', header=True),
-            Cell(value='2', title='Unlikely', header=True),
-            Cell(value='3', title='Possible', header=True),
-            Cell(value='4', title='Likely', header=True),
-            Cell(value='5', title='Almost Certain', header=True),
-        ],
-        [
+    # Define the colors for different risk levels
+    colors = {
+        "green": [10, 15, 16, 20, 21],
+        "yellow": [0, 5, 6, 11, 17, 22, 23],
+        "orange": [1, 2, 7, 12, 13, 18, 19, 24],
+        "red": [3, 4, 8, 9, 14],
+    }
 
-            Cell(value='Likelihood', header=True, colspan=7),
-        ]
-    ]
+    # Create a 5x5 grid and set the color for each cell
+    for color, indices in colors.items():
+        for index in indices:
+            i, j = divmod(index, 5)
 
-    session = request.dbsession
-    query = session.query(RiskAssessment)
-    query = query.filter(RiskAssessment.organization_id == context.id)
-    query = query.join(RiskAssessment.asset)
-    query = query.join(RiskAssessment.risk)
-
-    assessments = []
-    index = 0
-    for assessment in query:
-        impact = assessment.impact
-        likelihood = assessment.likelihood
-        if impact and likelihood:
-            index += 1
-            assessments.append({
-                'nr': index + 1,
-                'name': assessment.risk.name,
-                'asset': assessment.asset.name,
-                'impact': impact,
-                'likelihood': likelihood,
-            })
-
-            severity = 'success'
-            if impact * likelihood >= 5:
-                severity = 'warning'
-            if impact * likelihood >= 15:
-                severity = 'danger'
-
-            row = 5 - impact
-            col = likelihood
-            if row == 0:
-                col += 1
-            cells[row][col].value += Markup(
-                ' <span class="badge rounded-pill bg-{severity} {css_class}"'
-                ' title="{title}">{nr}</span>'
-            ).format(
-                severity=severity,
-                nr=index,
-                title=f'{assessment.asset.name}: {assessment.risk.name}',
-                css_class='text-dark' if severity == 'warning' else ''
+            fig.add_shape(
+                type="rect",
+                x0=j,
+                y0=4 - i,
+                x1=j + 1,
+                y1=5 - i,
+                line={"color": "white", "width": 0},
+                fillcolor=color,
+                layer="below",
             )
 
+    # Plot points
+    for risk in list(risks):
+        if risk.likelihood and risk.impact:
+            x, y = float(risk.likelihood - 1), float(4 - (risk.impact - 1))
+
+            # Adjust the position within the cell to avoid overlap
+            noise_x = np.random.uniform(0.1, 0.9)
+            noise_y = np.random.uniform(0.1, 0.9)
+            x, y = x + noise_x, y + noise_y
+
+            fig.add_trace(
+                go.Scatter(
+                    x=[x],
+                    y=[y],
+                    text=[str(risk.nr)],
+                    name="",
+                    mode="markers+text",
+                    marker={"color": "black", "size": 18},
+                    textposition="middle center",
+                    hoverinfo="text",
+                    hovertemplate=f"{risk.nr} {risk.name} \
+                    (Impact: {risk.impact} Likelihood: {risk.likelihood})",
+                    textfont={"color": "white"},
+                )
+            )
+
+    fig.update_xaxes(fixedrange=True)
+    fig.update_yaxes(fixedrange=True)
+
+    # Update layout
+    fig.update_layout(
+        xaxis={
+            "showgrid": False,
+            "zeroline": False,
+            "showticklabels": False,
+            "range": [-0.5, 5]
+        },
+        yaxis={
+            "showgrid": False,
+            "zeroline": False,
+            "showticklabels": False,
+            "range": [-0.5, 5]
+        },
+        showlegend=False,
+        width=700,
+        height=700,
+        margin={"l": 5, "r": 5, "t": 5, "b": 5},  # Adjusted margins
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+    )
+
+    # Add axis labels
+    fig.add_annotation(
+        x=2.5, y=-0.2, text="Impact", showarrow=False, font={"size": 20}
+    )
+    fig.add_annotation(
+        x=-0.2,
+        y=2.5,
+        text="Likelihood",
+        showarrow=False,
+        textangle=-90,
+        font={"size": 20},
+    )
+
+    return fig.to_html(
+        full_html=False,
+        include_plotlyjs=True,
+        config={
+            "modeBarButtonsToRemove": ["zoom", "pan", "select", "lasso2d"]
+        },
+    )
+
+
+def generate_risk_matrix_view(
+    context: "Organization", request: "IRequest"
+) -> "RenderData":
+    table = AssessmentOverviewTable(context, request)
+
     return {
-        'title': _('Risk Matrix'),
-        'cells': cells,
-        'assessments': assessments,
+        "title": _("Risk Matrix"),
+        "plot": Markup(plot_risk_matrix(table.query()).replace('<script', f'<script nonce="{request.csp_nonce}"')),  # noqa: MS001
+        "table": table,
     }
 
 
