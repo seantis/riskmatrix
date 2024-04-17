@@ -119,7 +119,6 @@ class DataColumn:
         params = {}
         if 'class_name' in self.options:
             params['class'] = self.options['class_name']
-
         if callable(self.sort_key):
             params['data_order'] = self.sort_key(data)
         return f'<td {html_params(**params)}>{self.format_data(data)}</td>'

@@ -292,13 +292,9 @@ def generate_risk_matrix_view(
     context: "Organization", request: "IRequest"
 ) -> "RenderData":
     table = AssessmentOverviewTable(context, request)
-
     return {
         "title": _("Risk Matrix"),
-        "plot": Markup(
-            "<style>.plotly-graph-div { margin-left: auto; margin-right: auto; }</style>"
-        )
-        + Markup(plot_risk_matrix(table.query())),
+        "plot": Markup(plot_risk_matrix(table.query()).replace('<script', f'<script nonce="{request.csp_nonce}"')),
         "table": table,
     }
 
@@ -308,10 +304,9 @@ def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
 
     # Define the colors for different risk levels
     colors = {
-        "green": [10, 15, 16, 20, 21],
-        "yellow": [0, 5, 6, 11, 17, 22, 23],
-        "orange": [1, 2, 7, 12, 13, 18, 19, 24],
-        "red": [3, 4, 8, 9, 14],
+        "green": [10, 15, 16, 20, 21, 22],
+        "yellow": [0, 1, 5, 6, 7, 11, 12, 13,  17, 18, 19,  23, 24],
+        "red": [3, 4, 8, 9, 14, 2 ],
     }
 
     # Create a 5x5 grid and set the color for each cell
@@ -325,34 +320,35 @@ def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
                 y0=4 - i,
                 x1=j + 1,
                 y1=5 - i,
-                line=dict(color="white", width=0),
+                line=dict(color="white", width=0.5),
                 fillcolor=color,
                 layer="below",
             )
 
     # Plot points
     for risk in list(risks):
-        i = risk.nr
-        x, y = risk.likelihood - 1, 4 - (risk.impact - 1)
+        if risk.likelihood and risk.impact:
+            i = risk.nr
+            y, x = risk.likelihood - 1, (risk.impact - 1)
 
-        # Adjust the position within the cell, ensuring it's within the cell boundaries
-        noise_x, noise_y = np.random.uniform(0.1, 0.9), np.random.uniform(0.1, 0.9)
-        x, y = float(x) + noise_x, float(y) + noise_y
+            # Adjust the position within the cell, ensuring it's within the cell boundaries
+            noise_x, noise_y = np.random.uniform(0.1, 0.9), np.random.uniform(0.1, 0.9)
+            x, y = float(x) + noise_x, float(y) + noise_y
 
-        fig.add_trace(
-            go.Scatter(
-                x=[x],
-                y=[y],
-                text=[str(risk.nr)],
-                name="",
-                mode="markers+text",
-                marker=dict(color="black", size=18),  # Increased size for visibility
-                textposition="middle center",
-                hoverinfo="text",
-                hovertemplate=f"{risk.nr} {risk.name} (Impact: {risk.impact} Likelihood: {risk.likelihood})",
-                textfont=dict(color="white"),
+            fig.add_trace(
+                go.Scatter(
+                    x=[x],
+                    y=[y],
+                    text=[str(risk.nr)],
+                    name="",
+                    mode="markers+text",
+                    marker=dict(color="black", size=18),  # Increased size for visibility
+                    textposition="middle center",
+                    hoverinfo="text",
+                    hovertemplate=f"{risk.nr} {risk.name} (Impact: {risk.impact} Likelihood: {risk.likelihood})",
+                    textfont=dict(color="white"),
+                )
             )
-        )
 
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
