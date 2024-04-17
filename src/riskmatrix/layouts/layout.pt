@@ -16,6 +16,9 @@
             <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/bundle.min.js')}"></script>
             <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/sentry.js')}"></script>
         </tal:block>
+        <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/plotly.min.js')}"></script>
+        <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/marked.min.js')}"></script>
+        
         <title>RiskMatrix<tal:b tal:condition="exists:title"> — ${title}</tal:b></title>
 
     </head>

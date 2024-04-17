@@ -14,7 +14,7 @@ from .home import home_view
 from .login import login_view
 from .logout import logout_view
 from .organization import organization_view
-from .risk import delete_risk_view
+from .risk import delete_risk_view, generate_risk_completion, stream_risk_generation
 from .risk import edit_risk_view
 from .risk import risks_view
 from .risk_assessment import assess_impact_view
@@ -160,6 +160,34 @@ def includeme(config: 'Configurator') -> None:
     )
 
     config.add_route(
+        "generate_catalog",
+        "/risk_catalog/generate",
+        factory=organization_factory
+    )
+
+    config.add_view(
+        generate_risk_completion,
+        route_name="generate_catalog",
+        renderer="templates/table.pt",
+        request_method="POST",
+        xhr=False
+    )
+
+    config.add_route(
+        "stream_risk_generation",
+        "/risk_catalog/generate/stream",
+        factory=organization_factory
+    )
+
+    config.add_view(
+        stream_risk_generation,
+        renderer='stream',
+        route_name="stream_risk_generation",
+        request_method="POST",
+        xhr=True
+    )
+
+    config.add_route(
         'add_catalog',
         '/risks_catalog/add',
         factory=organization_factory
@@ -271,6 +299,7 @@ def includeme(config: 'Configurator') -> None:
         '/risks/{id}/delete',
         factory=risk_factory
     )
+
     config.add_view(
         delete_risk_view,
         route_name='delete_risk',
@@ -283,7 +312,7 @@ def includeme(config: 'Configurator') -> None:
         request_method='DELETE',
         xhr=True
     )
-
+    
     # Risk assessment views
 
     config.add_route(
