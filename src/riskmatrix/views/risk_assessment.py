@@ -20,11 +20,11 @@ from riskmatrix.wtform import Form
 from riskmatrix.wtform.validators import Disabled
 
 
-from typing import Any, Generator, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from pyramid.interfaces import IRequest
     from sqlalchemy.orm.query import Query
-    from typing import TypeVar
+    from typing import TypeVar, Iterator
 
     from riskmatrix.models import Organization
     from riskmatrix.types import MixedDataOrRedirect
@@ -157,23 +157,23 @@ class AssessmentTable(AssessmentBaseTable):
 
 
 class AssessmentOverviewTable(AssessmentBaseTable):
-    nr = DataColumn(_("Nr."))
-    name = DataColumn(_("Name"))
-    description = DataColumn(_("Description"), class_name="visually-hidden")
-    category = DataColumn(_("Category"))
-    asset_name = DataColumn(_("Asset"))
-    likelihood = DataColumn(_("Likelihood"))
-    impact = DataColumn(_("Impact"))
+    nr = DataColumn(_('Nr.'))
+    name = DataColumn(_('Name'))
+    description = DataColumn(_('Description'), class_name='visually-hidden')
+    category = DataColumn(_('Category'))
+    asset_name = DataColumn(_('Asset'))
+    likelihood = DataColumn(_('Likelihood'))
+    impact = DataColumn(_('Impact'))
 
-    def __init__(self, org: "Organization", request: "IRequest") -> None:
-        super().__init__(org, request, id="risks-table")
+    def __init__(self, org: 'Organization', request: 'IRequest') -> None:
+        super().__init__(org, request, id='risks-table')
         xhr_edit_js.need()
 
-    def query(self) -> "Generator[RiskMatrixAssessment]":
+    def query(self) -> 'Iterator[RiskMatrixAssessment]':
         query = super().query()
 
-        for idx, item in enumerate(query):
-            item.nr = idx + 1
+        for idx, item in enumerate(query, start=1):
+            item.nr = idx
             yield item
 
 
@@ -321,15 +321,15 @@ class Cell:
         )
 
 
-def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
+def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> Markup:
     fig = go.Figure()
 
     # Define the colors for different risk levels
     colors = {
-        "green": [10, 15, 16, 20, 21],
-        "yellow": [0, 5, 6, 11, 17, 22, 23],
-        "orange": [1, 2, 7, 12, 13, 18, 19, 24],
-        "red": [3, 4, 8, 9, 14],
+        'green': [10, 15, 16, 20, 21],
+        'yellow': [0, 5, 6, 11, 17, 22, 23],
+        'orange': [1, 2, 7, 12, 13, 18, 19, 24],
+        'red': [3, 4, 8, 9, 14],
     }
 
     # Create a 5x5 grid and set the color for each cell
@@ -338,14 +338,14 @@ def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
             i, j = divmod(index, 5)
 
             fig.add_shape(
-                type="rect",
+                type='rect',
                 x0=j,
                 y0=4 - i,
                 x1=j + 1,
                 y1=5 - i,
-                line={"color": "white", "width": 0},
+                line={'color': 'white', 'width': 0},
                 fillcolor=color,
-                layer="below",
+                layer='below',
             )
 
     # Plot points
@@ -363,14 +363,14 @@ def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
                     x=[x],
                     y=[y],
                     text=[str(risk.nr)],
-                    name="",
-                    mode="markers+text",
-                    marker={"color": "black", "size": 18},
-                    textposition="middle center",
-                    hoverinfo="text",
-                    hovertemplate=f"{risk.nr} {risk.name} \
-                    (Impact: {risk.impact} Likelihood: {risk.likelihood})",
-                    textfont={"color": "white"},
+                    name='',
+                    mode='markers+text',
+                    marker={'color': 'black', 'size': 18},
+                    textposition='middle center',
+                    hoverinfo='text',
+                    hovertemplate=f'{risk.nr} {risk.name} \
+                    (Impact: {risk.impact} Likelihood: {risk.likelihood})',
+                    textfont={'color': 'white'},
                 )
             )
 
@@ -380,56 +380,56 @@ def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
     # Update layout
     fig.update_layout(
         xaxis={
-            "showgrid": False,
-            "zeroline": False,
-            "showticklabels": False,
-            "range": [-0.5, 5]
+            'showgrid': False,
+            'zeroline': False,
+            'showticklabels': False,
+            'range': [-0.5, 5]
         },
         yaxis={
-            "showgrid": False,
-            "zeroline": False,
-            "showticklabels": False,
-            "range": [-0.5, 5]
+            'showgrid': False,
+            'zeroline': False,
+            'showticklabels': False,
+            'range': [-0.5, 5]
         },
         showlegend=False,
         width=700,
         height=700,
-        margin={"l": 5, "r": 5, "t": 5, "b": 5},  # Adjusted margins
-        paper_bgcolor="white",
-        plot_bgcolor="white",
+        margin={'l': 5, 'r': 5, 't': 5, 'b': 5},  # Adjusted margins
+        paper_bgcolor='white',
+        plot_bgcolor='white',
     )
 
     # Add axis labels
     fig.add_annotation(
-        x=2.5, y=-0.2, text="Impact", showarrow=False, font={"size": 20}
+        x=2.5, y=-0.2, text='Impact', showarrow=False, font={'size': 20}
     )
     fig.add_annotation(
         x=-0.2,
         y=2.5,
-        text="Likelihood",
+        text='Likelihood',
         showarrow=False,
         textangle=-90,
-        font={"size": 20},
+        font={'size': 20},
     )
 
-    return fig.to_html(
+    return Markup(fig.to_html(
         full_html=False,
         include_plotlyjs=True,
         config={
-            "modeBarButtonsToRemove": ["zoom", "pan", "select", "lasso2d"]
+            'modeBarButtonsToRemove': ['zoom', 'pan', 'select', 'lasso2d']
         },
-    )
+    ))
 
 
 def generate_risk_matrix_view(
-    context: "Organization", request: "IRequest"
-) -> "RenderData":
+    context: 'Organization', request: 'IRequest'
+) -> 'RenderData':
     table = AssessmentOverviewTable(context, request)
 
     return {
-        "title": _("Risk Matrix"),
-        "plot": Markup(plot_risk_matrix(table.query()).replace('<script', f'<script nonce="{request.csp_nonce}"')),  # noqa: MS001
-        "table": table,
+        'title': _('Risk Matrix'),
+        'plot': plot_risk_matrix(table.query()).replace('<script', f'<script nonce="{request.csp_nonce}"'),
+        'table': table,
     }
 
 
