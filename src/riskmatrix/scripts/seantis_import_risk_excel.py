@@ -6,6 +6,7 @@ anyway, you might adjust it to import the excel at your organization too.
 """
 import argparse
 import sys
+import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING
 from typing import Iterator
@@ -23,11 +24,11 @@ from pyramid.paster import bootstrap
 from pyramid.paster import get_appsettings
 from sqlalchemy import select
 
+from riskmatrix.models import Asset
 from riskmatrix.models import Organization
 from riskmatrix.models import Risk
 from riskmatrix.models import RiskAssessment
 from riskmatrix.models import RiskCatalog
-from riskmatrix.models.asset import Asset
 from riskmatrix.orm import Base
 from riskmatrix.orm import get_engine
 from riskmatrix.scripts.util import select_existing_organization
@@ -72,15 +73,51 @@ def get_or_create_asset(
         Asset.name == asset_name
     )
 
-    asset = session.scalars(q).one_or_none()
-
-    if asset:
+    if asset := session.scalars(q).one_or_none():
         return asset
 
     asset = Asset(asset_name, organization)
     asset.organization_id = organization.id
     session.add(asset)
     return asset
+
+
+def get_or_create_risk(
+    risk_name: str,
+    catalog: RiskCatalog,
+    session: 'Session'
+) -> Risk:
+
+    q = select(Risk).where(
+        Risk.organization_id == catalog.organization.id,
+        Risk.name == risk_name
+    )
+
+    if risk := session.scalars(q).one_or_none():
+        return risk
+
+    risk = Risk(risk_name, catalog)
+    session.add(risk)
+    return risk
+
+
+def get_or_create_risk_assessment(
+    risk: Risk,
+    asset: Asset,
+    session: 'Session'
+) -> RiskAssessment:
+
+    q = select(RiskAssessment).where(
+        RiskAssessment.risk_id == risk.id,
+        RiskAssessment.asset_id == asset.id,
+    )
+
+    if assessment := session.scalars(q).one_or_none():
+        return assessment
+
+    assessment = RiskAssessment(risk=risk, asset=asset)
+    session.add(assessment)
+    return assessment
 
 
 def populate_catalog(
@@ -94,17 +131,15 @@ def populate_catalog(
             risk_details['asset_name'], catalog.organization, session
         )
 
-        risk = Risk(
-            name=risk_details['name'],
-            catalog=catalog,
-            description=risk_details['desc'],
-            category=risk_details['category']
+        risk = get_or_create_risk(
+            risk_details['name'], catalog, session
         )
+        risk.category = risk_details['category']
+        risk.description = risk_details['desc']
 
-        assessment = RiskAssessment(risk=risk, asset=asset)
+        assessment = get_or_create_risk_assessment(risk, asset, session)
         assessment.likelihood = risk_details['likelihood']
         assessment.impact = risk_details['impact']
-        session.add(assessment)
 
 
 def risks_from_excel(
@@ -126,7 +161,7 @@ def risks_from_excel(
     # Anyway, actual riks rows will start after row #2.
     start_after_row = 2
 
-    iterator = sheet.iter_rows(     # type: ignore[union-attr,misc]
+    iterator = sheet.iter_rows(
         values_only=True,
         min_row=start_after_row
     )
@@ -194,14 +229,10 @@ def main(argv: list[str] = sys.argv) -> None:
                     dbsession
                 )
             except sqlalchemy.exc.IntegrityError:
-                # TODO: Risks and assets (and therefore also assessments) are
-                # unique per organization, not catalog. Adding a risk from the
-                # excel that is already present in this organization will fail.
-                print(
-                    'Organization already contains some risks from the Excel. '
-                    'Abort!'
-                )
+                print('Failed to import excel, aborting.')
+                print(traceback.format_exc())
                 dbsession.rollback()
+                sys.exit(1)
             else:
                 print(
                     f'Successfully populated risk catalog "{catalog.name}" '
