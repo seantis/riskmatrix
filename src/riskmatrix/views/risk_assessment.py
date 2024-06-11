@@ -25,7 +25,7 @@ from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from pyramid.interfaces import IRequest
     from sqlalchemy.orm.query import Query
-    from typing import TypeVar
+    from typing import TypeVar, Iterator
 
     from riskmatrix.models import Organization
     from riskmatrix.types import MixedDataOrRedirect
@@ -130,25 +130,24 @@ class AssessmentTable(AssessmentBaseTable):
 
 
 class AssessmentOverviewTable(AssessmentBaseTable):
-    nr = DataColumn(_("Nr."))
-    name = DataColumn(_("Name"))
-    description = DataColumn(_("Description"), class_name="visually-hidden")
-    category = DataColumn(_("Category"))
-    asset_name = DataColumn(_("Asset"))
-    likelihood = DataColumn(_("Likelihood"))
-    impact = DataColumn(_("Impact"))
+    nr = DataColumn(_('Nr.'))
+    name = DataColumn(_('Name'))
+    description = DataColumn(_('Description'), class_name='visually-hidden')
+    category = DataColumn(_('Category'))
+    asset_name = DataColumn(_('Asset'))
+    likelihood = DataColumn(_('Likelihood'))
+    impact = DataColumn(_('Impact'))
 
-    def __init__(self, org: "Organization", request: "IRequest") -> None:
-        super().__init__(org, request, id="risks-table")
+    def __init__(self, org: 'Organization', request: 'IRequest') -> None:
+        super().__init__(org, request, id='risks-table')
         xhr_edit_js.need()
 
-    def query(self) -> "Query[RiskMatrixAssessment]":
+    def query(self) -> 'Iterator[RiskMatrixAssessment]':
         query = super().query()
 
-        return map(
-            lambda entry: setattr(entry[1], "nr", entry[0] + 1) or entry[1],
-            enumerate(query),
-        )
+        for idx, item in enumerate(query, start=1):
+            item.nr = idx
+            yield item
 
 
 _RADIO_TEMPLATE = Markup(
@@ -287,7 +286,6 @@ class Cell:
             params=params,
         )
 
-
 def generate_risk_matrix_view(
     context: "Organization", request: "IRequest"
 ) -> "RenderData":
@@ -382,11 +380,13 @@ def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
         font=dict(size=20),
     )
 
-    return fig.to_html(
+    return Markup(fig.to_html(
         full_html=False,
-        include_plotlyjs=False,
-        config={"modeBarButtonsToRemove": ["zoom", "pan", "select", "lasso2d"]},
-    )
+        include_plotlyjs=True,
+        config={
+            'modeBarButtonsToRemove': ['zoom', 'pan', 'select', 'lasso2d']
+        },
+    ))
 
 
 def edit_assessment_view(

@@ -48,6 +48,8 @@ zope.event==5.0
 zope.interface==6.1
 zope.schema==7.0.1
 zope.sqlalchemy==3.1
+numpy==1.26.3
+plotly==5.18.0
 psycopg2-binary==2.9.9
 redis[hiredis]==5.0.3
 
