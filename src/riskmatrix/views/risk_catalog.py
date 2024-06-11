@@ -31,6 +31,51 @@ if TYPE_CHECKING:
     _Q = TypeVar('_Q', bound=Query[Any])
 
 
+class RiskCatalogGenerationForm(Form):
+
+    def __init__(
+        self,
+        context: RiskCatalog | None,
+        request: 'IRequest',
+        prefix:  str = 'generate-xhr'
+    ) -> None:
+
+        self.title = _("AI Assisted Risk Catalog Generation")
+
+        super().__init__(
+            request.POST,
+            obj=context,
+            prefix=prefix,
+            meta={
+                'context': context,
+                'request': request
+            }
+        )
+
+    question_1 = StringField(
+        label=_('In welchem Bereich agiert die Firma?'),
+        validators=(
+            validators.DataRequired(),
+            validators.Length(max=256, min=2),
+        )
+    )
+
+    question_2 = StringField(
+        label=_('Bitte beschreibe deine Haupt-Kundenportolio in einem Satz'),
+        validators=(
+            validators.DataRequired(),
+            validators.Length(max=256, min=2),
+        )
+    )
+
+    question_3 = StringField(
+        label=_('Was für IT Angelegenheiten werden durch externe Partner betrieben?'),
+        validators=(
+            validators.DataRequired(),
+            validators.Length(max=256, min=2),
+        )
+    )
+
 class RiskCatalogForm(Form):
 
     def __init__(
@@ -175,8 +220,16 @@ def risk_catalog_view(
             css_class='btn-primary',
             modal='#edit-xhr',
             data_table_id=table.id,
+        ), Button(
+            url=request.route_url('generate_catalog', id=context.id),
+            icon='plus',
+            title=_('AI Assisted Risk Catalog Generation'),
+            css_class='btn-primary',
+            modal='#generate-xhr',
+            data_table_id=table.id,
         )],
         'edit_form': RiskCatalogForm(None, request),
+        'generate_form': RiskCatalogGenerationForm(None, request)
     }
 
 

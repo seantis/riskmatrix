@@ -9,6 +9,8 @@ from riskmatrix.layouts.steps import show_steps
 from riskmatrix.route_factories import root_factory
 from riskmatrix.security import authenticated_user
 from riskmatrix.security_policy import SessionSecurityPolicy
+from openai import OpenAI
+from anthropic import Anthropic
 
 
 from typing import TYPE_CHECKING
@@ -70,6 +72,26 @@ def main(
 
     with Configurator(settings=settings, root_factory=root_factory) as config:
         includeme(config)
+
+        if openai_apikey := settings.get('openai_api_key'):
+
+            openai_client = OpenAI(
+                api_key=openai_apikey
+            )
+            config.add_request_method(
+                lambda r: openai_client,
+                'openai',
+                reify=True
+            )
+        if anthropic_apikey := settings.get('anthropic_api_key'):
+            anthropic_client = Anthropic(
+                api_key=anthropic_apikey
+            )
+            config.add_request_method(
+                lambda r: anthropic_client,
+                'anthropic',
+                reify=True
+            )
 
     app = config.make_wsgi_app()
     return Fanstatic(app, versioning=True)
