@@ -211,3 +211,6 @@ def main() -> None:
         print('Dry run')
 
     upgrade(args)
+
+if __name__ == '__main__':
+    main()

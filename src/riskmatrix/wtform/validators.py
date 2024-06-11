@@ -16,6 +16,10 @@ password_regex = re.compile(
     r'^(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[\d])(?=.*[\W]).*$'
 )
 
+email_regex = re.compile(
+    r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+)
+
 
 def password_validator(form: 'Form', field: 'Field') -> None:
     password = form['password'].data
@@ -35,6 +39,9 @@ def password_validator(form: 'Form', field: 'Field') -> None:
         )
         raise ValidationError(msg)
 
+def email_validator(form: 'Form', field: 'Field') -> None:
+    if not email_regex.match(field.data):
+        raise ValidationError('Not a valid email.')
 
 class Immutable:
     """
