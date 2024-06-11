@@ -112,10 +112,11 @@ class RiskMetaForm(Form):
             }
         )
 
-        self.category.choices = category_choices(
-            organization_id,
-            session
-        )
+        # FIXME: currently disabled due to complexity given another dimension
+        # self.category.choices = category_choices(
+        #    organization_id,
+        #    session
+        #)
 
 
     name = StringField(
@@ -133,13 +134,14 @@ class RiskMetaForm(Form):
         )
     )
 
-    category = SelectField(
-        label=_('Category'),
-        choices=[('', '')],
-        validators=(
-            validators.Optional(),
-        )
-    )
+    # FIXME: currently disabled due to complexity given another dimension
+    #category = SelectField(
+    #    label=_('Category'),
+    #    choices=[('', '')],
+    #    validators=(
+    #        validators.Optional(),
+    #    ),
+    #)
 
     def validate_name(self, field: 'Field') -> None:
         session = self.meta.dbsession
@@ -188,7 +190,7 @@ class RisksTable(AJAXDataTable[Risk]):
     }
 
     name = DataColumn(_('Name'))
-    category = DataColumn(_('Category', ), class_name='visually-hidden')
+    #category = DataColumn(_('Category', ), class_name='visually-hidden')
     description = DataColumn(_('Description'))
 
     def __init__(self, catalog: 'RiskCatalog', request: 'IRequest') -> None:
@@ -278,19 +280,27 @@ def edit_risk_view(
         organization_id = context.organization_id
     else:
         risk = None
-        if request.json:
-            risk = Risk(name=request.json["name"], description=request.json["description"], catalog=context)
-            request.dbsession.add(risk)
-            request.dbsession.flush()
-            request.dbsession.refresh(risk)
-            response = Response(status=201)
+        try:
+            if request.json:
+                risk = Risk(name=request.json["name"], description=request.json["description"], catalog=context)
+                request.dbsession.add(risk)
+                request.dbsession.flush()
+                request.dbsession.refresh(risk)
+                response = Response(status=201)
 
-            return response
+                return response
+        except:
+            pass
         organization_id = context.id
         catalog = context
     form = RiskMetaForm(context, request)
     target_url = request.route_url('risks', id=organization_id)
-    if request.method == 'POST' and (not request.json and form.validate()):
+    try:
+        t = request.json
+        has_json = t is not None
+    except:
+        has_json = False
+    if request.method == 'POST' and (not has_json and form.validate()):
         if risk is None:
             risk = Risk(name=form.name.data or '', catalog=catalog)
             request.dbsession.add(risk)
