@@ -50,6 +50,10 @@ def sentry_context(event: NewRequest) -> None:
         with configure_scope() as scope:
             scope.user = {'id': request.user.id}
 
+def request_none_generator(event: 'NewRequest') -> None:
+    request = event.request
+    request.set_property(lambda r: secrets.token_urlsafe(), 'csp_nonce', reify=True)
+
 
 def request_none_generator(event: 'NewRequest') -> None:
     request = event.request

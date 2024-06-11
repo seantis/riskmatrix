@@ -2,6 +2,7 @@ from pyramid.authorization import Allow
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Mapped
 from uuid import uuid4
+from riskmatrix.models.risk_catalog import RiskCatalog
 
 from riskmatrix.orm.meta import Base
 from riskmatrix.orm.meta import str_256
@@ -30,6 +31,9 @@ class Organization(Base):
         back_populates='organization',
     )
     risks: Mapped[list['Risk']] = relationship(
+        back_populates='organization',
+    )
+    risk_catalogs:  Mapped[list['RiskCatalog']] = relationship(
         back_populates='organization',
     )
     users: Mapped[list['User']] = relationship(
