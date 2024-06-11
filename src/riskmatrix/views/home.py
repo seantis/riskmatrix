@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 def home_view(request: 'IRequest') -> HTTPFound:
     if request.authenticated_userid:
         # TODO: This should probably change
-        url = request.route_url('organization')
+        url = request.route_url('risk_catalog')
     else:
         url = request.route_url('login')
     return HTTPFound(location=url)
