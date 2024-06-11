@@ -9,6 +9,7 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import registry
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.schema import MetaData
+from sqlalchemy import DateTime
 
 from .json_type import JSONObject
 from .utcdatetime_type import UTCDateTime
@@ -46,6 +47,7 @@ BigIntPK = Annotated[int, mapped_column(
     primary_key=True
 )]
 BigInt = Annotated[int, 'BigInt']
+DateTimeNoTz = Annotated[datetime, 'DateTimeNoTz']
 UUIDStr = Annotated[str, 'UUIDStr']
 str_32 = Annotated[str, 32]
 str_64 = Annotated[str, 64]
@@ -63,6 +65,7 @@ class Base(DeclarativeBase):
         datetime: UTCDateTime,
         BigInt: BigInteger().with_variant(Integer(), 'sqlite'),
         str_32: String(length=32),
+        DateTimeNoTz: DateTime(timezone=False),
         str_64: String(length=64),
         str_128: String(length=128),
         str_256: String(length=256),
