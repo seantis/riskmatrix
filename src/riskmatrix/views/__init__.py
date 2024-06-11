@@ -6,6 +6,7 @@ from riskmatrix.route_factories import risk_factory
 from riskmatrix.route_factories import risk_assessment_factory
 from riskmatrix.route_factories import risk_catalog_factory
 
+from .password_change import password_change_view
 from .asset import assets_view
 from .asset import delete_asset_view
 from .asset import edit_asset_view
@@ -14,7 +15,7 @@ from .home import home_view
 from .login import login_view
 from .logout import logout_view
 from .organization import organization_view
-from .risk import delete_risk_view
+from .risk import delete_risk_view, generate_risk_completion, stream_risk_generation
 from .risk import edit_risk_view
 from .risk import risks_view
 from .risk_assessment import assess_impact_view
@@ -24,6 +25,7 @@ from .risk_assessment import edit_assessment_view
 from .risk_assessment import generate_risk_matrix_view
 from .risk_assessment import set_impact_view
 from .risk_assessment import set_likelihood_view
+from .password_retrieval import password_retrieval_view
 from .risk_catalog import delete_risk_catalog_view
 from .risk_catalog import edit_risk_catalog_view
 from .risk_catalog import risk_catalog_view
@@ -51,6 +53,24 @@ def includeme(config: 'Configurator') -> None:
         login_view,
         route_name='login',
         renderer='templates/login.pt',
+        require_csrf=False,
+        permission=NO_PERMISSION_REQUIRED
+    )
+
+    config.add_route('password_retrieval', '/password_retrieval')
+    config.add_view(
+        password_retrieval_view,
+        route_name='password_retrieval',
+        renderer='templates/password_retrieval.pt',
+        require_csrf=False,
+        permission=NO_PERMISSION_REQUIRED
+    )
+
+    config.add_route('password_change', '/password_change')
+    config.add_view(
+        password_change_view,
+        route_name='password_change',
+        renderer='templates/password_change.pt',
         require_csrf=False,
         permission=NO_PERMISSION_REQUIRED
     )
@@ -157,6 +177,34 @@ def includeme(config: 'Configurator') -> None:
         risk_catalog_view,
         route_name='risk_catalog',
         renderer='templates/table.pt',
+    )
+
+    config.add_route(
+        "generate_catalog",
+        "/risk_catalog/generate",
+        factory=organization_factory
+    )
+
+    config.add_view(
+        generate_risk_completion,
+        route_name="generate_catalog",
+        renderer="templates/table.pt",
+        request_method="POST",
+        xhr=False
+    )
+
+    config.add_route(
+        "stream_risk_generation",
+        "/risk_catalog/generate/stream",
+        factory=organization_factory
+    )
+
+    config.add_view(
+        stream_risk_generation,
+        renderer='stream',
+        route_name="stream_risk_generation",
+        request_method="POST",
+        xhr=True
     )
 
     config.add_route(
@@ -271,6 +319,7 @@ def includeme(config: 'Configurator') -> None:
         '/risks/{id}/delete',
         factory=risk_factory
     )
+
     config.add_view(
         delete_risk_view,
         route_name='delete_risk',
@@ -283,7 +332,7 @@ def includeme(config: 'Configurator') -> None:
         request_method='DELETE',
         xhr=True
     )
-
+    
     # Risk assessment views
 
     config.add_route(

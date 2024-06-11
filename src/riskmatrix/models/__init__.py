@@ -9,10 +9,11 @@ from riskmatrix.orm import get_tm_session
 from .asset import Asset
 from .organization import Organization
 from .risk import Risk
-from .risk_assessment import RiskAssessment
+from .risk_assessment import RiskAssessment, RiskMatrixAssessment
 from .risk_catalog import RiskCatalog
 from .risk_category import RiskCategory
 from .user import User
+from .password_change_token import PasswordChangeToken
 
 
 from typing import TYPE_CHECKING
@@ -60,5 +61,7 @@ __all__ = (
     'RiskAssessment',
     'RiskCatalog',
     'RiskCategory',
-    'User'
+    'RiskMatrixAssessment',
+    'User',
+    'PasswordChangeToken'
 )

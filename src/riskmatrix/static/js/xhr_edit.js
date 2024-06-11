@@ -193,3 +193,148 @@ $(function() {
         return false;
     });
 });
+
+$(document).ready(function () {
+    marked.use({
+        hooks: {
+            postprocess: function (html) {
+                return html.replace(/\sdisabled=""/g, '');
+            }
+        }
+    });
+
+    var risks_modal = $("form#generate-risks-xhr-form");
+
+    if (risks_modal.length === 0) return;
+    risks_modal = risks_modal[0];
+    $('div.modal#generate-risks-xhr').modal('show');
+
+    $('div.modal#generate-risks-xhr').on('hidden.bs.modal', function (e) {
+        window.location.href = '/risk_catalog';
+    })
+
+    var answers = JSON.parse(risks_modal.dataset.answers);
+    var catalogs = JSON.parse(risks_modal.dataset.catalogs);
+    var idx = 0;
+    var csrf_token = $("#generate-risks")[0].dataset['csrfToken'];
+    var title = $("h5#generate-risks-xhr-title").first();
+    var save_button = $("button#generate-risks")[0];
+    title.text(catalogs[idx].title);
+
+    function initiateGeneration(catalog) {
+        console.log(catalog)
+        console.log("Fetching data...");
+        title.text("Generating risks for '" + catalog.name + "' catalog..");
+        // Initialize a variable to accumulate received text
+        let accumulatedText = '';
+
+        // Function to update the modal body with new text
+        function updateModalBody(newText) {
+            // Remove all contents from div.modal-body
+            $("#generate-risks-xhr div.modal-body").empty();
+            const htmlContent = marked.parse(newText, { gfm: true });
+            // Insert the parsed HTML into div.modal-body
+            $("#generate-risks-xhr div.modal-body").html(htmlContent);
+        }
+
+        // Using the Fetch API to handle the streaming response
+        fetch('/risk_catalog/generate/stream', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': csrf_token,
+                'X-Requested-With': 'XMLHttpRequest' // Mark the request as an AJAX request
+            },
+            body: JSON.stringify({
+                answers,
+                catalog
+            }),
+        }).then(response => {
+            updateModalBody('Awaiting magician response...')
+            save_button.disabled = true;
+            const reader = response.body.getReader();
+
+            // Function to process the stream
+            (async function readStream() {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    let textChunk = new TextDecoder("utf-8").decode(value);
+                    accumulatedText += textChunk; // Accumulate the new text chunk
+                    updateModalBody(accumulatedText); // Update the modal body with the new accumulated text
+                }
+                save_button.disabled = false;
+                title.text("Generated Risks for '" + catalog.name + "' catalog");
+            })();
+        }).catch(error => {
+            console.error("Error fetching data:", error);
+        });
+
+
+
+    }
+    $("button#generate-risks").on('click', function (event) {
+        event.preventDefault();
+        // Array to hold the objects
+        var risks = [];
+
+        $(this).disabled = true;
+
+        // Iterate over each list item
+        $('#generate-risks-xhr div.modal-body ul > li').each(function () {
+            // For each 'li', find the 'input' (checkbox) and check its checked status
+            var isChecked = $(this).find('input[type="checkbox"]').is(':checked');
+
+            // Extract the risk name from the 'strong' element
+            var name = $(this).find('strong').text();
+
+            // Extract the description by getting the entire text of 'li'
+            // and then removing the name (including the following colon and space).
+            var description = $(this).text().replace(name + ': ', '');
+            if (isChecked) {
+                // Construct the risk object and add it to the 'risks' array
+                risks.push({
+                    name: name,
+                    description: description,
+                    catalog: catalogs[idx],
+                });
+            }
+        });
+
+
+        Promise.all(risks.map(risk => {
+
+
+            // make post request to /risk_catalog/{id}/add
+            return fetch('/risks_catalog/' + catalogs[idx].id + '/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrf_token,
+                    'X-Requested-With': 'XMLHttpRequest' // Mark the request as an AJAX request
+                },
+                body: JSON.stringify(risk),
+            }).then(response => {
+                return response.json();
+            }).then(data => {
+                risks = [];
+            }).catch(error => {
+                console.error("Error fetching data:", error);
+            }).finally(() => {
+            });
+        })).then(() => {
+            idx += 1;
+            if (idx >= catalogs.length) {
+                console.log("No more catalogs to process");
+                $('div.modal#generate-risks-xhr').modal('hide');
+                return;
+            }
+            initiateGeneration(catalogs[idx]);
+        })
+
+
+
+    });
+
+
+    initiateGeneration(catalogs[idx]);
+});

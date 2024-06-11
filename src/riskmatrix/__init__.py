@@ -2,6 +2,9 @@ from fanstatic import Fanstatic
 from pyramid.config import Configurator
 from pyramid_beaker import session_factory_from_settings
 from typing import Any
+from email.headerregistry import Address
+from pyramid.settings import asbool
+from .mail import PostmarkMailer
 
 from riskmatrix.flash import MessageQueue
 from riskmatrix.i18n import LocaleNegotiator
@@ -9,6 +12,8 @@ from riskmatrix.layouts.steps import show_steps
 from riskmatrix.route_factories import root_factory
 from riskmatrix.security import authenticated_user
 from riskmatrix.security_policy import SessionSecurityPolicy
+from openai import OpenAI
+from anthropic import Anthropic
 
 
 from typing import TYPE_CHECKING
@@ -22,6 +27,19 @@ __version__ = '0.0.0'
 def includeme(config: Configurator) -> None:
     settings = config.registry.settings
 
+    default_sender = settings.get(
+        'email.default_sender',
+        'riskmatrix@seantis.ch'
+    )
+    token = settings.get('mail.postmark_token', '')
+    stream = settings.get('mail.postmark_stream', 'development')
+    blackhole = asbool(settings.get('mail.postmark_blackhole', False))
+    config.registry.registerUtility(PostmarkMailer(
+        Address(addr_spec=default_sender),
+        token,
+        stream,
+        blackhole=blackhole
+    ))
     config.include('pyramid_beaker')
     config.include('pyramid_chameleon')
     config.include('pyramid_layout')
@@ -65,11 +83,35 @@ def main(
             environment=sentry_environment,
             integrations=[PyramidIntegration(), SqlalchemyIntegration()],
             traces_sample_rate=1.0,
-            profiles_sample_rate=0.25,
+            profiles_sample_rate=1.0,
+            enable_tracing=True,
+            send_default_pii=True
         )
+        print("configured sentry")
+        print(sentry_dsn)
 
     with Configurator(settings=settings, root_factory=root_factory) as config:
         includeme(config)
+
+        if openai_apikey := settings.get('openai_api_key'):
+
+            openai_client = OpenAI(
+                api_key=openai_apikey
+            )
+            config.add_request_method(
+                lambda r: openai_client,
+                'openai',
+                reify=True
+            )
+        if anthropic_apikey := settings.get('anthropic_api_key'):
+            anthropic_client = Anthropic(
+                api_key=anthropic_apikey
+            )
+            config.add_request_method(
+                lambda r: anthropic_client,
+                'anthropic',
+                reify=True
+            )
 
     app = config.make_wsgi_app()
     return Fanstatic(app, versioning=True)

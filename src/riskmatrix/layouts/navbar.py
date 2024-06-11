@@ -65,13 +65,9 @@ def navbar(context: object, request: 'IRequest') -> 'RenderData':
         'entries': [
             NavbarEntry(
                 request,
-                _('Organization'),
-                request.route_url('organization')
-            ),
-            NavbarEntry(
-                request,
                 _('Risk Catalog'),
-                request.route_url('risk_catalog')
+                request.route_url('risk_catalog'),
+                lambda request, url: request.path_url.startswith(request.route_url('risk_catalog'))
             ),
             NavbarEntry(
                 request,
@@ -83,6 +79,11 @@ def navbar(context: object, request: 'IRequest') -> 'RenderData':
                 _('Risk Assessment'),
                 request.route_url('assessment'),
                 lambda request, url: request.show_steps,
+            ),
+            NavbarEntry(
+                request,
+                _('Organization'),
+                request.route_url('organization')
             ),
         ]
     }
