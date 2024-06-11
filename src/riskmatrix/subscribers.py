@@ -55,6 +55,11 @@ def request_none_generator(event: 'NewRequest') -> None:
     request.set_property(lambda r: secrets.token_urlsafe(), 'csp_nonce', reify=True)
 
 
+def request_none_generator(event: 'NewRequest') -> None:
+    request = event.request
+    request.set_property(lambda r: secrets.token_urlsafe(), 'csp_nonce', reify=True)
+
+
 def includeme(config: 'Configurator') -> None:
     config.add_subscriber(csp_header, NewResponse)
     config.add_subscriber(request_none_generator, NewRequest)
