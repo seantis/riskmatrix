@@ -2,6 +2,9 @@ from fanstatic import Fanstatic
 from pyramid.config import Configurator
 from pyramid_beaker import session_factory_from_settings
 from typing import Any
+from email.headerregistry import Address
+from pyramid.settings import asbool
+from .mail import PostmarkMailer
 
 from riskmatrix.flash import MessageQueue
 from riskmatrix.i18n import LocaleNegotiator
@@ -24,6 +27,19 @@ __version__ = '0.0.0'
 def includeme(config: Configurator) -> None:
     settings = config.registry.settings
 
+    default_sender = settings.get(
+        'email.default_sender',
+        'riskmatrix@seantis.ch'
+    )
+    token = settings.get('mail.postmark_token', '')
+    stream = settings.get('mail.postmark_stream', 'development')
+    blackhole = asbool(settings.get('mail.postmark_blackhole', False))
+    config.registry.registerUtility(PostmarkMailer(
+        Address(addr_spec=default_sender),
+        token,
+        stream,
+        blackhole=blackhole
+    ))
     config.include('pyramid_beaker')
     config.include('pyramid_chameleon')
     config.include('pyramid_layout')
@@ -67,8 +83,12 @@ def main(
             environment=sentry_environment,
             integrations=[PyramidIntegration(), SqlalchemyIntegration()],
             traces_sample_rate=1.0,
-            profiles_sample_rate=0.25,
+            profiles_sample_rate=1.0,
+            enable_tracing=True,
+            send_default_pii=True
         )
+        print("configured sentry")
+        print(sentry_dsn)
 
     with Configurator(settings=settings, root_factory=root_factory) as config:
         includeme(config)

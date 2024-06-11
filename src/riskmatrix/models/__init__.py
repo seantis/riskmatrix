@@ -13,6 +13,7 @@ from .risk_assessment import RiskAssessment, RiskMatrixAssessment
 from .risk_catalog import RiskCatalog
 from .risk_category import RiskCategory
 from .user import User
+from .password_change_token import PasswordChangeToken
 
 
 from typing import TYPE_CHECKING
@@ -61,5 +62,6 @@ __all__ = (
     'RiskCatalog',
     'RiskCategory',
     'RiskMatrixAssessment',
-    'User'
+    'User',
+    'PasswordChangeToken'
 )
