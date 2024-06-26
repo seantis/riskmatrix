@@ -1,9 +1,3 @@
-"""
-Import risk excel 🕸️ into RiskMatrix ✨
-
-This script is specific to our sitation at seantis. The script is included
-anyway, you might adjust it to import the excel at your organization too.
-"""
 import argparse
 import sys
 import traceback
@@ -29,6 +23,7 @@ from riskmatrix.models import Organization
 from riskmatrix.models import Risk
 from riskmatrix.models import RiskAssessment
 from riskmatrix.models import RiskCatalog
+from riskmatrix.models import RiskCategory  # Make sure RiskCategory is imported
 from riskmatrix.orm import Base
 from riskmatrix.orm import get_engine
 from riskmatrix.scripts.util import select_existing_organization
@@ -82,6 +77,26 @@ def get_or_create_asset(
     return asset
 
 
+def get_or_create_risk_category(
+    category_name: str,
+    organization: Organization,
+    session: 'Session'
+) -> RiskCategory:
+
+    q = select(RiskCategory).where(
+        RiskCategory.organization_id == organization.id,
+        RiskCategory.name == category_name
+    )
+
+    if category := session.scalars(q).one_or_none():
+        return category
+
+    category = RiskCategory(name=category_name, organization=organization)
+    category.organization_id = organization.id
+    session.add(category)
+    return category
+
+
 def get_or_create_risk(
     risk_name: str,
     catalog: RiskCatalog,
@@ -131,10 +146,14 @@ def populate_catalog(
             risk_details['asset_name'], catalog.organization, session
         )
 
+        category = get_or_create_risk_category(
+            risk_details['category'], catalog.organization, session
+        )
+
         risk = get_or_create_risk(
             risk_details['name'], catalog, session
         )
-        risk.category = risk_details['category']
+        risk.category = category.name
         risk.description = risk_details['desc']
 
         assessment = get_or_create_risk_assessment(risk, asset, session)
