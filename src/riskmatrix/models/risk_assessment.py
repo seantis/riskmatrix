@@ -1,6 +1,7 @@
 from datetime import datetime
 from pyramid.authorization import Allow
 from sedate import utcnow
+from riskmatrix.orm.softdelete_base import SoftDeleteMixin
 from sqlalchemy import ForeignKey
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -12,10 +13,13 @@ from uuid import uuid4
 
 from riskmatrix.models import Asset
 from riskmatrix.models import Risk
+from riskmatrix.models.risk_assessment_info import RiskAssessmentInfo
 from riskmatrix.orm.meta import Base
 from riskmatrix.orm.meta import UUIDStr
 from riskmatrix.orm.meta import UUIDStrPK
-
+from sqlalchemy.types import JSON
+from dataclasses import dataclass
+from sqlalchemy_serializer import SerializerMixin
 
 from typing import Any, ClassVar
 from typing import TYPE_CHECKING
@@ -23,11 +27,11 @@ if TYPE_CHECKING:
     from riskmatrix.types import ACL
 
 
-class RiskAssessment(Base):
+class RiskAssessment(SoftDeleteMixin, Base, SerializerMixin):
 
     __tablename__ = 'risk_assessment'
     __table_args__ = (
-        UniqueConstraint('risk_id', 'asset_id'),
+        UniqueConstraint('risk_id', 'asset_id', 'risk_assessment_info_id'),
     )
 
     id: Mapped[UUIDStrPK]
@@ -40,6 +44,11 @@ class RiskAssessment(Base):
         index=True,
     )
 
+    risk_assessment_info_id: Mapped[UUIDStr] = mapped_column(
+        ForeignKey('risk_assessment_info.id', ondelete='CASCADE'),
+        index=True,
+    )
+
     meta: Mapped[dict[str, Any]] = mapped_column(default={})
     impact: Mapped[int | None]
     likelihood: Mapped[int | None]
@@ -47,19 +56,33 @@ class RiskAssessment(Base):
     created: Mapped[datetime] = mapped_column(default=utcnow)
     modified: Mapped[datetime | None] = mapped_column(onupdate=utcnow)
 
+    state_at_finish: Mapped[JSON | None] = mapped_column(JSON, nullable=True)
+
     risk: Mapped[Risk] = relationship(
         back_populates='assessments',
         lazy='joined'
     )
+
     asset: Mapped[Asset] = relationship(
         back_populates='assessments',
         lazy='joined'
+    )
+
+    risk_assessment_info: Mapped[RiskAssessmentInfo] = relationship(
+        back_populates='assessments',
+        lazy='joined'
+    )
+
+    risk_assessment_info_id: Mapped[UUIDStr] = mapped_column(
+        ForeignKey('risk_assessment_info.id', ondelete='CASCADE'),
+        index=True,
     )
 
     def __init__(
         self,
         asset:  Asset,
         risk:   Risk,
+        info:  'RiskAssessmentInfo',
         **meta: Any
     ):
         self.id = str(uuid4())
@@ -67,6 +90,7 @@ class RiskAssessment(Base):
         self.asset = asset
         self.risk = risk
         self.meta = meta
+        self.risk_assessment_info = info
 
     @validates('impact', 'likelihood')
     def ensure_larger_than_one(

@@ -1,0 +1,39 @@
+<metal:block use-macro="main_template"
+             xmlns="http://www.w3.org/1999/xhtml"
+             xmlns:tal="http://xml.zope.org/namespaces/tal"
+             xmlns:metal="http://xml.zope.org/namespaces/metal"
+             xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+             i18n:domain="riskmatrix">
+
+
+    <tal:block metal:fill-slot="content">
+
+        <h1>${title}</h1>
+
+
+        <div style="display: block; padding: 18px"></div>
+
+        <div class="container-full">
+            <form id="edit-xhr-form" method="POST" novalidate data-fields="${'[' + ','.join(f'&quot;{field}&quot;' for field in edit_form._fields) + ']'}">
+                <input type="hidden" name="csrf_token" value="${layout.csrf_token()}" type="datetime-local"/>
+                <div class="row align-items-end justify-content-end">
+                    <div class="col col-5" tal:repeat="field edit_form">
+                        ${field.label(class_='form-label')}
+                        ${field(class_='form-control')}
+                    </div>
+                    <div class="col col-2">
+                        <button type="submit" class="btn btn-primary" style="margin: 0!important" i18n:translate>Finish</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div style="display: block; padding: 8px"></div>
+
+        <h5 style="margin-left:2px; color: #ADADAD; font-weight: 800; font-style: italic; font-family: serif; margin-bottom: 0px;">Übersicht aller Risk Assessments</h5>
+        <div style="display: block; padding: 8px"></div>
+
+        ${table}
+    </tal:block>
+
+</metal:block>

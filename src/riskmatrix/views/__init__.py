@@ -25,6 +25,8 @@ from .risk_assessment import edit_assessment_view
 from .risk_assessment import generate_risk_matrix_view
 from .risk_assessment import set_impact_view
 from .risk_assessment import set_likelihood_view
+from .risk_assessment import finish_risk_assessment_view
+from .risk_assessment import compare_assessments_view
 from .password_retrieval import password_retrieval_view
 from .risk_catalog import delete_risk_catalog_view
 from .risk_catalog import edit_risk_catalog_view
@@ -109,6 +111,9 @@ def includeme(config: 'Configurator') -> None:
         route_name='assets',
         renderer='templates/table.pt',
     )
+
+    config.add_route('finish_assessment', '/assessment/finish', factory=organization_factory)
+    config.add_view(finish_risk_assessment_view, route_name='finish_assessment', renderer='templates/finish_assessment.pt')
 
     config.add_route(
         'add_asset',
@@ -340,6 +345,19 @@ def includeme(config: 'Configurator') -> None:
         '/assessment',
         factory=organization_factory
     )
+
+    config.add_route(
+        'compare_assessments',
+        '/assessment/{id_base}/compare/{id_compare}',
+        factory=organization_factory
+    )
+
+    config.add_view(
+        compare_assessments_view,
+        route_name='compare_assessments',
+        renderer='templates/compare.pt',
+    )
+
     config.add_view(
         assessment_view,
         route_name='assessment',

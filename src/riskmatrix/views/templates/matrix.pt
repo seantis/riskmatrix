@@ -10,14 +10,11 @@
 
         <h1>${title}</h1>
 
-
         ${plot}
-
 
         <div style="display: block; padding: 24px"></div>
 
         ${table}
-
 
     </tal:block>
 

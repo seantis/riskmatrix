@@ -1,6 +1,7 @@
 from datetime import datetime
 from pyramid.authorization import Allow
 from sedate import utcnow
+from riskmatrix.orm.softdelete_base import SoftDeleteMixin
 from sqlalchemy import ForeignKey
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -25,8 +26,9 @@ if TYPE_CHECKING:
     from riskmatrix.models import RiskAssessment
     from riskmatrix.types import ACL
 
+from sqlalchemy_serializer import SerializerMixin
 
-class Asset(Base):
+class Asset(Base, SoftDeleteMixin, SerializerMixin):
 
     __tablename__ = 'asset'
     __table_args__ = (
@@ -48,6 +50,7 @@ class Asset(Base):
     assessments: Mapped[list['RiskAssessment']] = relationship(
         back_populates='asset'
     )
+    
     organization: Mapped['Organization'] = relationship(
         back_populates='assets'
     )
