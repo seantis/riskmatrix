@@ -55,5 +55,12 @@ anthropic
 redis[hiredis]==5.0.3
 uwsgi==2.0.25.1
 psycopg2-binary==2.9.9
+sqlalchemy_easy_softdelete
+sqlalchemy_serializer
+pyruvate
+langchain
+langfuse
+langchain-openai
+langchain-anthropic
 
 -e .

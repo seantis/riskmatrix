@@ -1,6 +1,7 @@
 from datetime import datetime
 from pyramid.authorization import Allow
 from sedate import utcnow
+from riskmatrix.orm.softdelete_base import SoftDeleteMixin
 from sqlalchemy import ForeignKey
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import mapped_column
@@ -15,6 +16,7 @@ from riskmatrix.orm.meta import Text
 from riskmatrix.orm.meta import UUIDStr
 from riskmatrix.orm.meta import UUIDStrPK
 
+from sqlalchemy_serializer import SerializerMixin
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -23,7 +25,7 @@ if TYPE_CHECKING:
     from riskmatrix.types import ACL
 
 
-class RiskCatalog(Base):
+class RiskCatalog(Base, SoftDeleteMixin, SerializerMixin):
 
     __tablename__ = 'risk_catalog'
     __table_args__ = (

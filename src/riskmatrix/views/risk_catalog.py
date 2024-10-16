@@ -241,9 +241,8 @@ def delete_risk_catalog_view(
     organization_id = context.organization_id
     name = context.name
 
-    session = request.dbsession
-    session.delete(context)
-    session.flush()
+    context.soft_delete()
+    request.dbsession.flush()
 
     message = _(
         'Succesfully deleted risk catalog "${name}"',

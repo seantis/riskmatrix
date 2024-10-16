@@ -1,5 +1,6 @@
 from markupsafe import Markup
 from pyramid.httpexceptions import HTTPFound
+from riskmatrix.models.risk_assessment_info import RiskAssessmentInfo, RiskAssessmentState
 from sqlalchemy import func
 from wtforms import SelectMultipleField
 from wtforms import StringField
@@ -120,10 +121,15 @@ class AssetForm(Form):
 
         existing_risk_ids = {
             assessment.risk.id
-            for assessment in obj.assessments
+            for assessment in obj.assessments if assessment.risk_assessment_info.state != RiskAssessmentState.FINISHED
         }
         new_risk_ids = set()
 
+        # get latest risk_assessment_info for assessment, which is not finished
+        risk_assessment_info = self.meta.dbsession.query(RiskAssessment).filter(RiskAssessment.asset_id == obj.id).filter(RiskAssessmentInfo.state != RiskAssessmentState.FINISHED).order_by(RiskAssessmentInfo.created.desc()).first()
+
+        if risk_assessment_info is None:
+            risk_assessment_info = RiskAssessmentInfo(obj.organization_id)
         session = self.meta.dbsession
         query = session.query(Risk)
         query = query.filter(Risk.catalog_id.in_(obj.catalog_ids))
@@ -131,7 +137,7 @@ class AssetForm(Form):
             new_risk_ids.add(risk.id)
             if risk.id not in existing_risk_ids:
                 # create an empty assessment
-                session.add(RiskAssessment(obj, risk))
+                session.add(RiskAssessment(obj, risk, risk_assessment_info))
 
         # remove empty assessments that are no longer relevant
         for assessment in obj.assessments:
@@ -263,9 +269,8 @@ def delete_asset_view(
     organization_id = context.organization_id
     name = context.name
 
-    session = request.dbsession
-    session.delete(context)
-    session.flush()
+    context.soft_delete()
+    request.dbsession.flush()
 
     message = _(
         'Succesfully deleted asset "${name}"',

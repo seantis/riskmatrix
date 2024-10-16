@@ -14,7 +14,8 @@ from riskmatrix.security import authenticated_user
 from riskmatrix.security_policy import SessionSecurityPolicy
 from openai import OpenAI
 from anthropic import Anthropic
-
+from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -87,31 +88,46 @@ def main(
             enable_tracing=True,
             send_default_pii=True
         )
-        print("configured sentry")
-        print(sentry_dsn)
 
     with Configurator(settings=settings, root_factory=root_factory) as config:
         includeme(config)
 
         if openai_apikey := settings.get('openai_api_key'):
-
-            openai_client = OpenAI(
-                api_key=openai_apikey
+            openai_client = ChatOpenAI(
+                api_key=openai_apikey,
+                model = "gpt-4o-mini",
+                temperature=0.7
             )
             config.add_request_method(
                 lambda r: openai_client,
-                'openai',
+                'llm',
                 reify=True
             )
-        if anthropic_apikey := settings.get('anthropic_api_key'):
-            anthropic_client = Anthropic(
-                api_key=anthropic_apikey
+        elif anthropic_apikey := settings.get('anthropic_api_key'):
+            anthropic_client = ChatAnthropic(
+                api_key=anthropic_apikey,
+                model="claude-3-5-sonnet-20240620",
+                temperature=0.7
             )
             config.add_request_method(
                 lambda r: anthropic_client,
-                'anthropic',
+                'llm',
                 reify=True
             )
+            
+        if langfuse_host := settings.get("langfuse_host"):
+            from langfuse.callback import CallbackHandler
+            langfuse_handler = CallbackHandler(
+                secret_key=settings.get("langfuse_secret_key"),
+                public_key=settings.get("langfuse_public_key"),
+                host=langfuse_host,
+            )
+            config.add_request_method(
+                lambda r: langfuse_handler,
+                'langfuse',
+                reify=True
+            )
+ 
 
     app = config.make_wsgi_app()
     return Fanstatic(app, versioning=True)

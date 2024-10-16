@@ -255,9 +255,8 @@ def delete_risk_view(
     catalog_id = context.catalog_id
     name = context.name
 
-    session = request.dbsession
-    session.delete(context)
-    session.flush()
+    context.soft_delete()
+    request.dbsession.flush()
 
     message = _(
         'Succesfully deleted risk "${name}"',
@@ -348,7 +347,7 @@ user_prompts = {
 }
 
 few_shot_examples = {
-    "risks": [
+    "risks":  [
         {
             "name": "Hardwaredefekt Ausrüstung Serverraum",
             "description": "Eine HW-Komponete im Serverraum fällt aus. Die Komponente muss ersetzt werden."
@@ -399,6 +398,8 @@ few_shot_examples = {
 
 }
 
+from langchain_core.messages import HumanMessage, SystemMessage
+
 def stream_risk_generation(context: 'Organization', request: 'IRequest') -> Any:
     req_catalog = request.json['catalog']
     existing_catalog: RiskCatalog | None = request.dbsession.query(RiskCatalog).filter_by(
@@ -412,35 +413,26 @@ def stream_risk_generation(context: 'Organization', request: 'IRequest') -> Any:
         request.dbsession.flush()
         request.dbsession.refresh(catalog)
     
-    def generate(catalog_name: str, catalog_description: str) -> Any:
+    def generate(catalog_name: str, catalog_description: str, email: str, org_name) -> Any:
         answers = request.json['answers']
         user_answers = '\n'.join(list(map(lambda answer: f' - **{answer[0]}**: {answer[1]}', answers.items())))
         examples = '\n'.join(list(map(lambda answer: f' - __{answer["name"]}__: {answer["description"]}', few_shot_examples['risks'])))
         prompt = f"\n{user_prompts['risks']}\nExamples:\n{examples}\n\nUser-Answers:\n{user_answers}. \n\nCurrent Risk-Catalog:\n - name:{catalog_name}\n - description: {catalog_description}"
         try:
-            response = request.anthropic.messages.create(
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    },  
-                ],
-                system=sys_prompts['risks'],
-                model="claude-3-haiku-20240307",
-                max_tokens=1024,
-                stream=True
-            )
-            
+            messages = [
+                #SystemMessage(content=sys_prompts['risks']),
+                HumanMessage(content=prompt)
+            ]
+            response = request.llm.stream(messages, config={"callbacks":[request.langfuse], "langfuse_user_id": email, "tags": [org_name]})
             for event in response:
-                if event.type == 'content_block_delta':
-                    yield bytes(event.delta.text, encoding='utf-8')
-        except:
+               yield bytes(event.content, encoding='utf-8')
+        except Exception as e:
             raise StopIteration
 
     headers = [('Content-Type', 'text/event-stream'),
                ('Cache-Control', 'no-cache'),]
     response = Response(headerlist=headers)
-    response.app_iter = generate(catalog.name, catalog.description)
+    response.app_iter = generate(catalog.name, catalog.description, request.user.email, context.name)
     return response 
     
 def generate_risk_completion(context: 'Organization', request: 'IRequest') -> 'XHRDataOrRedirect':
