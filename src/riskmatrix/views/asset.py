@@ -258,6 +258,7 @@ def assets_view(
             data_table_id=table.id,
         )],
         'edit_form': AssetForm(context, request),
+        "helper_text": Markup("Assets can be attached to multiple Risk catalogs, looking to manage your <a href=\"/risk_catalog\">risks</a>? Are you ready for your <a href=\"/assessment\">assessment</a>?")
     }
 
 

@@ -20,7 +20,10 @@
                     </div>
                 </div>
                 <div class="col col-6">
-                    <h5 style="margin-left:2px; color: #ADADAD; font-weight: 800; font-style: italic; font-family: serif; margin-bottom: 0px;">${comparison_assessment.name} (${comparison_assessment.finished_at})</h5>
+                    <h5 style="margin-left:2px; color: #ADADAD; font-weight: 800; font-style: italic; font-family: serif; margin-bottom: 0px;">
+                        ${comparison_assessment.name} (${comparison_assessment.finished_at.strftime('%d.%m.%Y %H:%M')})
+                    </h5>
+                    
                     <br/>
                     <div style="width: 100%">
                         ${right_plot}

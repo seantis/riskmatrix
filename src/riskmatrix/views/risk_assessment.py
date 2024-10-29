@@ -128,6 +128,9 @@ def compare_assessments_view(context: "Organization", request: "IRequest") -> "R
                 risk.diff_impact = (risk.impact - comp_risk.impact)
             else:
                 risk.diff_impact = None
+        else:
+            risk.diff_likelihood = None
+            risk.diff_impact = None
     
     comp_table = AssessmentComparisonTable(context, request, all_risks)
     
@@ -159,7 +162,7 @@ class AssessmentInfoTable(AJAXDataTable[RiskAssessmentInfo]):
     def query(self) -> "Query[RiskAssessment]":
         session = self.request.dbsession
         query = session.query(RiskAssessmentInfo)
-        query = query.order_by(RiskAssessmentInfo.created.desc())
+        query = query.order_by(RiskAssessmentInfo.created.asc())
         return query
     
     def current_open_assessment(self) -> RiskAssessmentInfo | None:
@@ -184,7 +187,7 @@ class AssessmentInfoTable(AJAXDataTable[RiskAssessmentInfo]):
         ]
 class AssessmentBaseTable(AJAXDataTable[RiskAssessment]):
     default_options = {
-        "length_menu": [[25, 50, 100, -1], [25, 50, 100, "All"]],
+        "length_menu": [[-1], ["All"]],
         "order": [[0, "asc"]],  # corresponds to column name
     }
 
@@ -606,6 +609,8 @@ def finish_risk_assessment_view(context: "Organization", request: "IRequest") ->
 
     # add a riskassessment object per risk and asset to the new assessment info object
     for asset in context.assets:
+        print("asset", asset.id)
+        print("catalog_ids", asset.catalog_ids)
         for risk_catalog in [cat for cat in context.risk_catalogs if cat.id in asset.catalog_ids]:
             for risk in risk_catalog.risks:
                 new_risk_assessment = RiskAssessment(
