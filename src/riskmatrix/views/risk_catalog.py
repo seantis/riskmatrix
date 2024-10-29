@@ -229,7 +229,8 @@ def risk_catalog_view(
             data_table_id=table.id,
         )],
         'edit_form': RiskCatalogForm(None, request),
-        'generate_form': RiskCatalogGenerationForm(None, request)
+        'generate_form': RiskCatalogGenerationForm(None, request),
+        'helper_text': Markup("Risk catalogs are collections of risks to be combined with multiple different assets, looking for <a href=\"/assets\">assets</a>?")
     }
 
 

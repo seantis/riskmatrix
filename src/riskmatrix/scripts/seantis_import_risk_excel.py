@@ -66,6 +66,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 def get_or_create_asset(
     asset_name: str,
     organization: Organization,
+    risk_catalog: RiskCatalog,
     session: 'Session'
 ) -> Asset:
 
@@ -77,8 +78,10 @@ def get_or_create_asset(
     if asset := session.scalars(q).one_or_none():
         return asset
 
-    asset = Asset(asset_name, organization)
+    asset = Asset(asset_name, organization, meta={"catalogs": [risk_catalog.id]})
     asset.organization_id = organization.id
+    asset.meta = {"catalogs": [risk_catalog.id]}
+    
     session.add(asset)
     return asset
 
@@ -151,7 +154,7 @@ def populate_catalog(
 
     for risk_details in risks:
         asset = get_or_create_asset(
-            risk_details['asset_name'], catalog.organization, session
+            risk_details['asset_name'], catalog.organization, catalog, session
         )
 
         risk = get_or_create_risk(
