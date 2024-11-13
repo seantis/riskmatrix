@@ -13,10 +13,10 @@ def test_home_view(config):
 
 
 def test_home_view_authenticated(config, user):
-    config.add_route('organization', '/organization')
+    config.add_route('risk_catalog', '/risk_catalog')
 
     request = DummyRequest()
     response = home_view(request)
     assert response.status_int == 302
-    expected_location = 'http://example.com/organization'
+    expected_location = 'http://example.com/risk_catalog'
     assert response.location == expected_location

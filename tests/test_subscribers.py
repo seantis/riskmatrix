@@ -1,13 +1,14 @@
 from pyramid.events import NewRequest
 from pyramid.events import NewResponse
 
-from riskmatrix.subscribers import csp_header
+from riskmatrix.subscribers import csp_header, request_nonce_generator
 from riskmatrix.subscribers import sentry_context
 from riskmatrix.testing import DummyRequest
 
 
 def test_csp_header(config):
     request = DummyRequest()
+    request.csp_nonce = '123'
     response = request.response
     event = NewResponse(request, response)
     csp_header(event)
@@ -21,7 +22,7 @@ def test_csp_header(config):
         "frame-ancestors 'none'; "
         "img-src 'self' data: blob:; "
         "object-src 'self'; "
-        "script-src 'self' blob: resource:; "
+        "script-src 'self' 'nonce-123' blob: resource:; "
         "style-src 'self' 'unsafe-inline'"
     )
 
@@ -29,6 +30,7 @@ def test_csp_header(config):
 def test_csp_header_sentry(config):
     config.registry.settings['sentry_dsn'] = 'https://aa:zz@sentry.io/22'
     request = DummyRequest()
+    request.csp_nonce = '123'
     response = request.response
     event = NewResponse(request, response)
     csp_header(event)
@@ -42,13 +44,14 @@ def test_csp_header_sentry(config):
         "frame-ancestors 'none'; "
         "img-src 'self' data: blob:; "
         "object-src 'self'; "
-        "script-src 'self' blob: resource:; "
+        "script-src 'self' 'nonce-123' blob: resource:; "
         "style-src 'self' 'unsafe-inline'; "
         "report-uri https://sentry.io/api/22/security/?sentry_key=aa"
     )
 
     config.registry.settings['sentry_dsn'] = 'https://aa@1.ingest.sentry.io/22'
     request = DummyRequest()
+    request.csp_nonce = '123'
     response = request.response
     event = NewResponse(request, response)
     csp_header(event)
@@ -62,7 +65,7 @@ def test_csp_header_sentry(config):
         "frame-ancestors 'none'; "
         "img-src 'self' data: blob:; "
         "object-src 'self'; "
-        "script-src 'self' blob: resource:; "
+        "script-src 'self' 'nonce-123' blob: resource:; "
         "style-src 'self' 'unsafe-inline'; "
         "report-uri https://sentry.io/api/22/security/?sentry_key=aa"
     )
