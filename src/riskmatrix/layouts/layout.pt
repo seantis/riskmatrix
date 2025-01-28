@@ -5,52 +5,45 @@
       i18n:domain="riskmatrix"
       lang="${layout.locale_name()}"
       class="h-100"
-      data_sentry_dsn="${layout.sentry_dsn()}">
+      data_sentry_dsn="${layout.sentry_dsn()}"
+      data-bs-theme="dark">
 
     <head>
-
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
         <tal:block tal:condition="layout.sentry_dsn()">
-            <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/bundle.min.js')}"></script>
-            <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/sentry.js')}"></script>
+            <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/bundle.min.js')}" nonce="${request.csp_nonce}"></script>
+            <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/sentry.js')}" nonce="${request.csp_nonce}"></script>
         </tal:block>
-        <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/plotly.min.js')}"></script>
-        <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/marked.min.js')}"></script>
-        
-        <title>RiskMatrix<tal:b tal:condition="exists:title"> — ${title}</tal:b></title>
+        <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/plotly.min.js')}" nonce="${request.csp_nonce}"></script>
+        <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/marked.min.js')}" nonce="${request.csp_nonce}"></script>
+        <script type="text/javascript" src="${layout.static_url('riskmatrix:static/js/plotly_theme.js')}" nonce="${request.csp_nonce}"></script>
 
+        <title>RiskMatrix<tal:b tal:condition="exists:title"> — ${title}</tal:b></title>
     </head>
 
     <body class="d-flex flex-column h-100">
-
+    
         ${panel('navbar')}
 
         <!-- Begin page content -->
         <main class="flex-shrink-0">
-
             ${panel('flash')}
-
             <div class="container">
-
                 <div class="row" tal:omit-tag="not:layout.show_steps()">
-
                     <div class="col-md-auto" tal:condition="layout.show_steps()">
                         ${panel('steps')}
                     </div>
-
                     <div class="col" tal:omit-tag="not:layout.show_steps()">
                         <tal:block metal:define-slot="content" />
                     </div>
                 </div>
-
             </div>
-
             <tal:block metal:define-slot="modals" />
-
         </main>
 
+        <!-- Footer Content -->
         <footer class="footer mt-auto py-3 bg-dark">
             <div class="container">
                 <div class="row">
@@ -108,7 +101,5 @@
                 </div>
             </div>
         </footer>
-
     </body>
-
 </html>

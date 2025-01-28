@@ -1,3 +1,4 @@
+import json
 from markupsafe import Markup
 from pyramid.httpexceptions import HTTPFound
 from sqlalchemy import func
@@ -6,6 +7,7 @@ from wtforms import StringField
 from wtforms import TextAreaField
 from wtforms import validators
 from pyramid.response import Response
+from langchain_core.messages import HumanMessage
 
 from riskmatrix.controls import Button
 from riskmatrix.models import Risk
@@ -15,7 +17,6 @@ from riskmatrix.data_table import DataColumn
 from riskmatrix.data_table import maybe_escape
 from riskmatrix.i18n import _
 from riskmatrix.i18n import translate
-from riskmatrix.models.organization import Organization
 from riskmatrix.static import xhr_edit_js
 from riskmatrix.views.risk_catalog import RiskCatalogForm, RiskCatalogGenerationForm, RiskCatalogTable
 from riskmatrix.wtform import Form
@@ -34,6 +35,7 @@ if TYPE_CHECKING:
     from wtforms.fields.choices import _GroupedChoices
 
     from riskmatrix.models import RiskCatalog
+    from riskmatrix.models.organization import Organization
     from riskmatrix.types import MixedDataOrRedirect
     from riskmatrix.types import XHRDataOrRedirect
     from riskmatrix.types import RenderData
@@ -111,12 +113,11 @@ class RiskMetaForm(Form):
                 'dbsession': session
             }
         )
-
         # FIXME: currently disabled due to complexity given another dimension
         # self.category.choices = category_choices(
         #    organization_id,
         #    session
-        #)
+        # )
 
 
     name = StringField(
@@ -135,13 +136,13 @@ class RiskMetaForm(Form):
     )
 
     # FIXME: currently disabled due to complexity given another dimension
-    #category = SelectField(
+    # category = SelectField(
     #    label=_('Category'),
     #    choices=[('', '')],
     #    validators=(
     #        validators.Optional(),
     #    ),
-    #)
+    # )
 
     def validate_name(self, field: 'Field') -> None:
         session = self.meta.dbsession
@@ -190,7 +191,7 @@ class RisksTable(AJAXDataTable[Risk]):
     }
 
     name = DataColumn(_('Name'))
-    #category = DataColumn(_('Category', ), class_name='visually-hidden')
+    # category = DataColumn(_('Category', ), class_name='visually-hidden')
     description = DataColumn(_('Description'))
 
     def __init__(self, catalog: 'RiskCatalog', request: 'IRequest') -> None:
@@ -334,7 +335,6 @@ def edit_risk_view(
             'target_url': target_url,
         }
 
-import json
 
 sys_prompts = {
     "risks": "You are a helpful tool for creating and managing risk assessments for information security purposes. You help manage and monitor the risks associated with information security for organisations and prompt relevant risks for all security in software development, operations, management and all over information security. Formulate the risks in neutral language, as they suggest a state rather than a negative comment. Avoid using the word 'risk' or any form that indicates negative incidents, it should be objective, be concise, use the same language to respond as the user answers his questions",
@@ -398,7 +398,6 @@ few_shot_examples = {
 
 }
 
-from langchain_core.messages import HumanMessage, SystemMessage
 
 def stream_risk_generation(context: 'Organization', request: 'IRequest') -> Any:
     req_catalog = request.json['catalog']

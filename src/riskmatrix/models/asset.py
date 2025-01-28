@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 
 from sqlalchemy_serializer import SerializerMixin
 
+
 class Asset(Base, SoftDeleteMixin, SerializerMixin):
 
     __tablename__ = 'asset'

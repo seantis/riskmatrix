@@ -1,3 +1,5 @@
+import json
+import pytz
 from dataclasses import dataclass
 from markupsafe import Markup
 from pyramid.httpexceptions import HTTPFound
@@ -11,7 +13,7 @@ from wtforms.widgets import html_params
 import plotly.graph_objects as go
 import numpy as np
 from datetime import datetime
-
+    
 from riskmatrix.controls import Button
 from riskmatrix.models import RiskAssessment, RiskMatrixAssessment
 from riskmatrix.data_table import AJAXDataTable
@@ -146,6 +148,7 @@ def compare_assessments_view(context: "Organization", request: "IRequest") -> "R
         "right_plot": Markup(plot_risk_matrix(comarison_risks).replace('<script', f'<script nonce="{request.csp_nonce}"')),
     }
 
+
 class AssessmentInfoTable(AJAXDataTable[RiskAssessmentInfo]):
     name = DataColumn(_("Name"))
     state = DataColumn(_("Status"))
@@ -244,7 +247,7 @@ class AssessmentComparisonTable(AssessmentBaseTable):
     nr = DataColumn(_("Nr."))
     name = DataColumn(_("Name"))
     description = DataColumn(_("Description"), class_name="visually-hidden")
-    #category = DataColumn(_("Category"))
+    # category = DataColumn(_("Category"))
     asset_name = DataColumn(_("Asset"))
     likelihood = DataColumn(_("Likelihood"))
     diff_likelihood = DataColumn(_("Change (Likelihood)"))
@@ -258,7 +261,6 @@ class AssessmentComparisonTable(AssessmentBaseTable):
 
 
     def apply_filter_by_overview_id(self, query: "_Q", id) -> "_Q":
-        #return query.filter(RiskAssessment.risk_assessment_info_id == id)
         query = query.join(RiskAssessment.risk_assessment_info)
         return query.filter(RiskAssessmentInfo.id == id)
     
@@ -283,7 +285,7 @@ class AssessmentOverviewTable(AssessmentBaseTable):
     def apply_filter_by_overview_id(self, query: "_Q", id) -> "_Q":
         query = query.join(RiskAssessment.risk_assessment_info)
         return query.filter(RiskAssessmentInfo.id == id)
-    
+
     def query(self, append_numbers=True, ignore_risk_assessment_info_state=False) -> "Query[RiskMatrixAssessment]":
         query = super().query(ignore_risk_assessment_info_state=ignore_risk_assessment_info_state)
         if append_numbers:
@@ -307,6 +309,7 @@ _RADIO_TEMPLATE = Markup(
     </div>
 """
 )
+
 
 class AssessmentFinishForm(Form):
     def __init__(
@@ -478,14 +481,12 @@ def generate_risk_matrix_compare_view(
 def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
     fig = go.Figure()
 
-    # Define the colors for different risk levels
     colors = {
         "green": [10, 15, 16, 20, 21, 22],
         "yellow": [0, 1, 5, 6, 7, 11, 12, 13,  17, 18, 19,  23, 24],
         "red": [3, 4, 8, 9, 14, 2 ],
     }
 
-    # Create a 5x5 grid and set the color for each cell
     for color, indices in colors.items():
         for index in indices:
             i, j = divmod(index, 5)
@@ -496,18 +497,16 @@ def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
                 y0=4 - i,
                 x1=j + 1,
                 y1=5 - i,
-                line=dict(color="white", width=0.5),
+                line=dict(color="rgba(0,0,0,0.5)", width=0.5),
                 fillcolor=color,
                 layer="below",
             )
 
-    # Plot points
     for risk in list(risks):
         if risk.likelihood and risk.impact:
             i = risk.nr
             y, x = risk.likelihood - 1, (risk.impact - 1)
 
-            # Adjust the position within the cell, ensuring it's within the cell boundaries
             noise_x, noise_y = np.random.uniform(0.1, 0.9), np.random.uniform(0.1, 0.9)
             x, y = float(x) + noise_x, float(y) + noise_y
 
@@ -518,18 +517,20 @@ def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
                     text=[str(risk.nr)],
                     name="",
                     mode="markers+text",
-                    marker=dict(color="black", size=18),  # Increased size for visibility
+                    marker=dict(color="rgba(0,0,0,0.8)", size=18),
                     textposition="middle center",
                     hoverinfo="text",
                     hovertemplate=f"{risk.nr} {risk.name} (Impact: {risk.impact} Likelihood: {risk.likelihood})",
-                    textfont=dict(color="white"),
+                    textfont=dict(color="rgba(0,0,0,0.9)"),
                 )
             )
 
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
 
-    # Update layout
+    # Create a clean base template without any default colors
+    clean_template = go.layout.Template()
+    
     fig.update_layout(
         xaxis=dict(
             showgrid=False, zeroline=False, showticklabels=False, range=[-0.5, 5]
@@ -540,14 +541,17 @@ def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
         showlegend=False,
         width=600,
         height=600,
-        margin=dict(l=5, r=5, t=5, b=5),  # Adjusted margins
-        paper_bgcolor="white",
-        plot_bgcolor="white",
+        margin=dict(l=5, r=5, t=5, b=5),
+        template=clean_template,
+        modebar=dict(bgcolor='rgba(0,0,0,0)', color='#000000'),
+        paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        plot_bgcolor='rgba(0,0,0,0)',   # Transparent background
+        font=dict(color='#000000', family='DM Sans, sans-serif')  # Default to black text
     )
 
-    # Add axis labels
     fig.add_annotation(
-        x=2.5, y=-0.2, text="Impact", showarrow=False, font=dict(size=20)
+        x=2.5, y=-0.2, text="Impact", showarrow=False, 
+        font=dict(size=20, color='#000000', family='DM Sans, sans-serif')
     )
     fig.add_annotation(
         x=-0.2,
@@ -555,13 +559,22 @@ def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
         text="Likelihood",
         showarrow=False,
         textangle=-90,
-        font=dict(size=20),
+        font=dict(size=20, color='#000000', family='DM Sans, sans-serif')
     )
 
     return fig.to_html(
         full_html=False,
         include_plotlyjs=False,
-        config={"modeBarButtonsToRemove": ["zoom", "pan", "select", "lasso2d"]},
+        config={
+            "modeBarButtonsToRemove": ["zoom", "pan", "select", "lasso2d"],
+            "displayModeBar": True,
+            "displaylogo": False,
+            "responsive": True,
+            "toImageButtonOptions": {
+                "format": "svg",
+                "filename": "risk_matrix",
+            }
+        }
     )
 
 def finish_risk_assessment_view(context: "Organization", request: "IRequest") -> "MixedDataOrRedirect":
@@ -571,7 +584,7 @@ def finish_risk_assessment_view(context: "Organization", request: "IRequest") ->
             "table": AssessmentInfoTable(context, request),
             "edit_form": AssessmentFinishForm(context, request),
         }
-    # get all assessments of the risks in the organization where state != FINISHED where context is the organization object
+    
     assessment = request.dbsession.query(RiskAssessmentInfo).filter(
         RiskAssessmentInfo.organization_id == context.id,
         RiskAssessmentInfo.state != RiskAssessmentState.FINISHED
@@ -581,7 +594,6 @@ def finish_risk_assessment_view(context: "Organization", request: "IRequest") ->
         RiskAssessment.organization_id == context.id, RiskAssessmentInfo.state != RiskAssessmentState.FINISHED
     ).all()
 
-    import json
 
     for entry in existing_assessment_entries:
         entry.state_at_finish = json.dumps(entry.to_dict(rules=("-organization.users", '-organization.risks', '-organization.risk_catalogs', '-organization.assets', '-asset.assessments', '-asset.organization', '-risk.catalog.children','-risk.catalog.parent', '-risk.catalog.risks', '-risk.catalog.organization', '-risk.assessments', '-risk.organization', '-risk_assessment_info')))
@@ -589,7 +601,7 @@ def finish_risk_assessment_view(context: "Organization", request: "IRequest") ->
         request.dbsession.flush()
     
     assessment_finish_form = AssessmentFinishForm(context, request)
-    import pytz
+    
     for a in assessment:
         a.state = RiskAssessmentState.FINISHED
         a.name = assessment_finish_form.display_name.data
@@ -600,14 +612,12 @@ def finish_risk_assessment_view(context: "Organization", request: "IRequest") ->
         request.dbsession.add(a)
         request.dbsession.flush()
 
-    # create new assessment info object
     new_assessment = RiskAssessmentInfo(
         organization_id=context.id
     )
     request.dbsession.add(new_assessment)
     request.dbsession.flush()
 
-    # add a riskassessment object per risk and asset to the new assessment info object
     for asset in context.assets:
         print("asset", asset.id)
         print("catalog_ids", asset.catalog_ids)
@@ -622,6 +632,7 @@ def finish_risk_assessment_view(context: "Organization", request: "IRequest") ->
                 request.dbsession.flush()
 
     return HTTPFound(location=request.route_url("home"))
+
 
 def edit_assessment_view(
     context: RiskAssessment, request: "IRequest"
