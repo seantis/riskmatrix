@@ -76,6 +76,7 @@ class RiskCatalogGenerationForm(Form):
         )
     )
 
+
 class RiskCatalogForm(Form):
 
     def __init__(

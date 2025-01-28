@@ -67,7 +67,9 @@ def navbar(context: object, request: 'IRequest') -> 'RenderData':
                 request,
                 _('Risk Catalog'),
                 request.route_url('risk_catalog'),
-                lambda request, url: request.path_url.startswith(request.route_url('risk_catalog'))
+                lambda request, url: request.path_url.startswith(
+                    request.route_url('risk_catalog')
+                )
             ),
             NavbarEntry(
                 request,
