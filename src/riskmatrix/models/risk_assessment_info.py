@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from sedate import utcnow
 from riskmatrix.orm.meta import Base
 import enum
@@ -8,16 +7,13 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Mapped
 from riskmatrix.orm.meta import UUIDStr
 from riskmatrix.orm.meta import UUIDStrPK
-from sqlalchemy import UniqueConstraint
-from sqlalchemy import Column
+from sqlalchemy_serializer import SerializerMixin
 from datetime import datetime
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from riskmatrix.models import RiskAssessment
-    
-
 
 
 class RiskAssessmentState(enum.Enum):
@@ -31,8 +27,6 @@ class RiskAssessmentState(enum.Enum):
         }
         return names[self]
 
-from sqlalchemy_serializer import SerializerMixin
-
 
 class RiskAssessmentInfo(Base, SerializerMixin):
 
@@ -43,7 +37,7 @@ class RiskAssessmentInfo(Base, SerializerMixin):
         ForeignKey('organization.id', ondelete='CASCADE'),
         index=True,
     )
-    
+
     name: Mapped[str] = mapped_column(nullable=True)
 
     state: Mapped[RiskAssessmentState] = mapped_column(

@@ -58,7 +58,9 @@ class RiskCatalog(Base, SoftDeleteMixin, SerializerMixin):
     modified: Mapped[datetime | None] = mapped_column(onupdate=utcnow)
 
     risks: Mapped[list['Risk']] = relationship(back_populates='catalog')
-    organization: Mapped['Organization'] = relationship(back_populates='risk_catalogs')
+    organization: Mapped['Organization'] = relationship(
+        back_populates='risk_catalogs'
+    )
 
     def __init__(
         self,

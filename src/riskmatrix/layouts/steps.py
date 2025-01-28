@@ -41,7 +41,11 @@ def steps(context: 'Organization', request: 'IRequest') -> 'RenderData':
                 '#',
                 disabled=True
             ),
-            Step(_("Finish Assessment"), request.route_url('finish_assessment'), disabled=False),
+            Step(
+                _("Finish Assessment"),
+                request.route_url('finish_assessment'),
+                disabled=False
+            ),
         ]
     }
 
