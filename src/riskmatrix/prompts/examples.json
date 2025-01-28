@@ -1,0 +1,50 @@
+{
+    "risks": [
+        {
+            "name": "Hardwaredefekt Ausrüstung Serverraum",
+            "description": "Eine HW-Komponete im Serverraum fällt aus. Die Komponente muss ersetzt werden."
+        },
+        {
+            "name": "Softwareänderungen",
+            "description": "In einer wichtigen produktiven Anwendung kommt es zu vielen (kritischen) Änderungen. Diese werden nur ungenügend getestet. Es stellt sich heraus, dass ein Softwarefehler bei Kunden zu beträchtlichem Schaden und finanziellen Verlusten geführt hat."
+        },
+        {
+            "name": "Offenlegung von Kundendaten nach Softwaretest",
+            "description": "Nach einem Softwaretest werden die dazu benötigten Kundendaten nicht gelöscht. Sie bleiben längere Zeit auf einem nicht geschützten Server verfügbar. Es besteht der Verdacht, dass die Daten weitergegeben wurden."
+        },
+        {
+            "name": "Ransomware",
+            "description": "Ein Angreifer dringt in Systeme ein und verschlüsselt die Daten. Für die Entschlüsselung wird Lösegeld gefordert."
+        },
+        {
+            "name": "CEO-Fraud",
+            "description": "Im Namen des Firmenchefs wird die Buchhaltung angewiesen, eine Zahlung auf ein (typischerweise ausländisches) Konto der Betrüger vorzunehmen."
+        }
+    ],
+    "catalogs": [
+        {
+            "name": "Software Entwicklung",
+            "description": "In der IT-Branche birgt die Softwareentwicklung Risiken hinsichtlich der Einhaltung von Zeitplänen, Budgets und Qualitätsstandards. Fehler in der Codebasis oder inkompatible Systemintegrationen können zu Verzögerungen in der Produktveröffentlichung oder zu Sicherheitslücken führen."
+        },
+        {
+            "name": "Human Resources",
+            "description": "HR-Risiken in der IT-Branche umfassen Schwierigkeiten bei der Anwerbung und Bindung qualifizierter Fachkräfte, da der Wettbewerb um Talente hoch ist. Zudem kann eine unzureichende Personalentwicklung die Innovation und Anpassungsfähigkeit des Unternehmens beeinträchtigen."
+        },
+        {
+            "name": "Public Relations",
+            "description": "PR-Risiken beziehen sich auf das Management der öffentlichen Wahrnehmung und Markenreputation. Fehltritte in der Kommunikation oder Skandale können das Vertrauen von Kunden und Partnern schnell untergraben."
+        },
+        {
+            "name": "Sales & Marketing",
+            "description": "Im Vertrieb und Marketing bestehen Risiken in der effektiven Positionierung von Produkten und Dienstleistungen in einem sich schnell verändernden Technologiemarkt. Eine fehlgeleitete Strategie kann zu Umsatzeinbußen und einem Verlust der Marktposition führen."
+        },
+        {
+            "name": "Infrastruktur",
+            "description": "Infrastrukturelle Risiken in der IT-Branche umfassen die Zuverlässigkeit und Sicherheit von physischen und virtuellen Netzwerken. Ausfälle, Datenverluste oder Cyberangriffe können erhebliche operationelle und finanzielle Schäden verursachen."
+        },
+        {
+            "name": "Externe Services",
+            "description": "Die Abhängigkeit von externen Dienstleistern und Zulieferern birgt Risiken in Bezug auf Qualität, Zuverlässigkeit und Compliance. Probleme bei diesen Partnern können zu Betriebsunterbrechungen und Reputationsverlust führen."
+        }
+    ]
+} 

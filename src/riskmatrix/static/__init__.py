@@ -53,9 +53,13 @@ popper = js('popper.min.js')
 jquery = js('jquery.min.js')
 datatable_core = js('jquery.dataTables.min.js', depends=[jquery])
 bootstrap_core = js('bootstrap.bundle.min.js', depends=[jquery, popper])
-bootstrap_js = js('bootstrap_custom.js', depends=[jquery, bootstrap_core, popper])
+bootstrap_js = js(
+    'bootstrap_custom.js',
+    depends=[jquery, bootstrap_core, popper]
+)
 datatable_bootstrap = js(
-    'dataTables.bootstrap5.min.js', depends=[bootstrap_core, datatable_core]
+    'dataTables.bootstrap5.min.js',
+    depends=[bootstrap_core, datatable_core]
 )
 datatable_js = js('datatables_custom.js', depends=[datatable_bootstrap])
 xhr_edit_js = js('xhr_edit.js', depends=[datatable_js])

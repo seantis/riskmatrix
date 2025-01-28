@@ -18,7 +18,6 @@ from riskmatrix.orm.meta import Base
 from riskmatrix.orm.meta import UUIDStr
 from riskmatrix.orm.meta import UUIDStrPK
 from sqlalchemy.types import JSON
-from dataclasses import dataclass
 from sqlalchemy_serializer import SerializerMixin
 
 from typing import Any, ClassVar
@@ -82,7 +81,7 @@ class RiskAssessment(SoftDeleteMixin, Base, SerializerMixin):
         self,
         asset:  Asset,
         risk:   Risk,
-        info:  'RiskAssessmentInfo',
+        info:  RiskAssessmentInfo,
         **meta: Any
     ):
         self.id = str(uuid4())

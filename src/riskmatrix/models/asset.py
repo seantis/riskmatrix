@@ -51,7 +51,7 @@ class Asset(Base, SoftDeleteMixin, SerializerMixin):
     assessments: Mapped[list['RiskAssessment']] = relationship(
         back_populates='asset'
     )
-    
+
     organization: Mapped['Organization'] = relationship(
         back_populates='assets'
     )

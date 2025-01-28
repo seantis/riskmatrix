@@ -2,7 +2,6 @@ import json
 from markupsafe import Markup
 from pyramid.httpexceptions import HTTPFound
 from sqlalchemy import func
-from wtforms import SelectField
 from wtforms import StringField
 from wtforms import TextAreaField
 from wtforms import validators
@@ -18,9 +17,13 @@ from riskmatrix.data_table import maybe_escape
 from riskmatrix.i18n import _
 from riskmatrix.i18n import translate
 from riskmatrix.static import xhr_edit_js
-from riskmatrix.views.risk_catalog import RiskCatalogForm, RiskCatalogGenerationForm, RiskCatalogTable
+from riskmatrix.views.risk_catalog import (
+    RiskCatalogForm,
+    RiskCatalogGenerationForm,
+    RiskCatalogTable
+)
 from riskmatrix.wtform import Form
-import re
+from riskmatrix.prompts import system_prompts, user_prompts, examples
 
 
 from typing import Any, TYPE_CHECKING
@@ -34,7 +37,6 @@ if TYPE_CHECKING:
     from wtforms.fields.choices import _Choice
     from wtforms.fields.choices import _GroupedChoices
 
-    from riskmatrix.models import RiskCatalog
     from riskmatrix.models.organization import Organization
     from riskmatrix.types import MixedDataOrRedirect
     from riskmatrix.types import XHRDataOrRedirect
@@ -89,18 +91,18 @@ class RiskMetaForm(Form):
 
     def __init__(
         self,
-        context: 'Risk | RiskCatalog',
+        context: Risk | RiskCatalog,
         request: 'IRequest',
         prefix:  str = 'edit-xhr'
     ) -> None:
 
         if isinstance(context, Risk):
             obj = context
-            organization_id = context.organization_id
+            # organization_id = context.organization_id
             self.title = _('Edit Risk')
         else:
             obj = None
-            organization_id = context.id
+            # organization_id = context.id
             self.title = _('Add Risk')
 
         session = request.dbsession
@@ -118,7 +120,6 @@ class RiskMetaForm(Form):
         #    organization_id,
         #    session
         # )
-
 
     name = StringField(
         label=_('Name'),
@@ -194,7 +195,7 @@ class RisksTable(AJAXDataTable[Risk]):
     # category = DataColumn(_('Category', ), class_name='visually-hidden')
     description = DataColumn(_('Description'))
 
-    def __init__(self, catalog: 'RiskCatalog', request: 'IRequest') -> None:
+    def __init__(self, catalog: RiskCatalog, request: 'IRequest') -> None:
         super().__init__(catalog, request, id='risks-table')
         xhr_edit_js.need()
 
@@ -228,12 +229,15 @@ class RisksTable(AJAXDataTable[Risk]):
         return risk_buttons(risk, self.request)
 
 
-def risks_view(context: 'RiskCatalog', request: 'IRequest') -> 'RenderData':
+def risks_view(context: RiskCatalog, request: 'IRequest') -> 'RenderData':
     table = RisksTable(context, request)
     return {
         'supertitle': _('Risks', mapping={'catalog': context.name}),
         'title': _('${catalog}', mapping={'catalog': context.name}),
-        'description': _('${catalog}', mapping={'catalog': context.description}),
+        'description': _(
+            '${catalog}',
+            mapping={'catalog': context.description}
+        ),
         'delete_title': _('Delete Risk'),
         'table': table,
         'top_buttons': [Button(
@@ -272,7 +276,7 @@ def delete_risk_view(
 
 
 def edit_risk_view(
-    context: 'Risk | RiskCatalog',
+    context: Risk | RiskCatalog,
     request: 'IRequest'
 ) -> 'MixedDataOrRedirect':
     if isinstance(context, Risk):
@@ -282,15 +286,19 @@ def edit_risk_view(
         risk = None
         try:
             if request.json:
-                risk = Risk(name=request.json["name"], description=request.json["description"], catalog=context)
+                risk = Risk(
+                    name=request.json["name"],
+                    description=request.json["description"],
+                    catalog=context
+                )
                 request.dbsession.add(risk)
                 request.dbsession.flush()
                 request.dbsession.refresh(risk)
                 response = Response(status=201)
 
                 return response
-        except:
-            pass
+        except Exception as e:
+            print(e)
         organization_id = context.id
         catalog = context
     form = RiskMetaForm(context, request)
@@ -298,7 +306,8 @@ def edit_risk_view(
     try:
         t = request.json
         has_json = t is not None
-    except:
+    except Exception as e:
+        print(e)
         has_json = False
     if request.method == 'POST' and (not has_json and form.validate()):
         if risk is None:
@@ -336,132 +345,125 @@ def edit_risk_view(
         }
 
 
-sys_prompts = {
-    "risks": "You are a helpful tool for creating and managing risk assessments for information security purposes. You help manage and monitor the risks associated with information security for organisations and prompt relevant risks for all security in software development, operations, management and all over information security. Formulate the risks in neutral language, as they suggest a state rather than a negative comment. Avoid using the word 'risk' or any form that indicates negative incidents, it should be objective, be concise, use the same language to respond as the user answers his questions",
-    "catalogs": "You are a helpful tool for creating and managing risk assessments for information security purposes. You help manage and monitor the risks associated with information security for organisations and prompt relevant risks for all security in software development, operations, management and all over information security. Formulate the risks in neutral language, as they suggest a state rather than a negative comment. Avoid using the word 'risk' or any form that indicates negative incidents, it should be objective, be concise, use the same language to respond as the user answers his questions",
-}
-
-user_prompts = {
-    "risks": "Create up to 10 novel, distinct and relevant risks related to information security and IT operations for solely single (1) and ONLY the one provided risk catalog. Get inspired by the examples but don't copy them.  You are given the risk catalog name and description. All risks generated need to be within the context of the given catalog. \nRespond in the same language for the creation of these risk as the users has answered the questions. Directly respond in markdown notated text format with the following format, be concise: \n #### <risk catalog title>\n- [ ] __<risk name>__: <risk description>\n- [ ] __<risk name>__: <risk description>\n...<further risks>...\n\n",
-    "catalogs": """Create 2 novel and for the business relevan risk catalogs. et inspired by the examples but don't copy them. Just please respond in the same language for the creation of the risk catalog objects as the user has answerein the questions. Directly respond as a json object with the keys being a single work nickname of the riskand with each object containing the field name and description, but first add a key to the object named lang containing the iso language code which the user responded to the questions. You are given example catalogs with names and description. All risk catalogs generated need to be within the context of the given organization."""
-}
-
-few_shot_examples = {
-    "risks":  [
-        {
-            "name": "Hardwaredefekt Ausrüstung Serverraum",
-            "description": "Eine HW-Komponete im Serverraum fällt aus. Die Komponente muss ersetzt werden."
-        },
-        {
-            "name": "Softwareänderungen",
-            "description": "In einer wichtigen produktiven Anwendung kommt es zu vielen (kritischen) Änderungen. Diese werden nur ungenügend getestet. Es stellt sich heraus, dass ein Softwarefehler bei Kunden zu beträchtlichem Schaden und finanziellen Verlusten geführt hat."
-        },
-        {
-            "name": "Offenlegung von Kundendaten nach Softwaretest",
-            "description": "Nach einem Softwaretest werden die dazu benötigten Kundendaten nicht gelöscht. Sie bleiben längere Zeit auf einem nicht geschützten Server verfügbar. Es besteht der Verdacht, dass die Daten weitergegeben wurden."
-        },
-        {
-            "name": "Ransomware",
-            "description": "Ein Angreifer dringt in Systeme ein und verschlüsselt die Daten. Für die Entschlüsselung wird Lösegeld gefordert."
-        },
-        {
-            "name": "CEO-Fraud",
-            "description": "Im Namen des Firmenchefs wird die Buchhaltung angewiesen, eine Zahlung auf ein (typischerweise ausländisches) Konto der Betrüger vorzunehmen."
-        }
-    ],
-    "catalogs": [
-  {
-    "name": "Software Entwicklung",
-    "description": "In der IT-Branche birgt die Softwareentwicklung Risiken hinsichtlich der Einhaltung von Zeitplänen, Budgets und Qualitätsstandards. Fehler in der Codebasis oder inkompatible Systemintegrationen können zu Verzögerungen in der Produktveröffentlichung oder zu Sicherheitslücken führen."
-  },
-  {
-    "name": "Human Resources",
-    "description": "HR-Risiken in der IT-Branche umfassen Schwierigkeiten bei der Anwerbung und Bindung qualifizierter Fachkräfte, da der Wettbewerb um Talente hoch ist. Zudem kann eine unzureichende Personalentwicklung die Innovation und Anpassungsfähigkeit des Unternehmens beeinträchtigen."
-  },
-  {
-    "name": "Public Relations",
-    "description": "PR-Risiken beziehen sich auf das Management der öffentlichen Wahrnehmung und Markenreputation. Fehltritte in der Kommunikation oder Skandale können das Vertrauen von Kunden und Partnern schnell untergraben."
-  },
-  {
-    "name": "Sales & Marketing",
-    "description": "Im Vertrieb und Marketing bestehen Risiken in der effektiven Positionierung von Produkten und Dienstleistungen in einem sich schnell verändernden Technologiemarkt. Eine fehlgeleitete Strategie kann zu Umsatzeinbußen und einem Verlust der Marktposition führen."
-  },
-  {
-    "name": "Infrastruktur",
-    "description": "Infrastrukturelle Risiken in der IT-Branche umfassen die Zuverlässigkeit und Sicherheit von physischen und virtuellen Netzwerken. Ausfälle, Datenverluste oder Cyberangriffe können erhebliche operationelle und finanzielle Schäden verursachen."
-  },
-  {
-    "name": "Externe Services",
-    "description": "Die Abhängigkeit von externen Dienstleistern und Zulieferern birgt Risiken in Bezug auf Qualität, Zuverlässigkeit und Compliance. Probleme bei diesen Partnern können zu Betriebsunterbrechungen und Reputationsverlust führen."
-  }
-]
-
-}
-
-
-def stream_risk_generation(context: 'Organization', request: 'IRequest') -> Any:
+def stream_risk_generation(
+    context: 'Organization',
+    request: 'IRequest'
+) -> Any:
     req_catalog = request.json['catalog']
-    existing_catalog: RiskCatalog | None = request.dbsession.query(RiskCatalog).filter_by(
-        name=req_catalog['name'], organization_id=context.id
-    ).first()
+    existing_catalog: RiskCatalog | None = (
+        request.dbsession.query(RiskCatalog)
+        .filter_by(name=req_catalog['name'], organization_id=context.id)
+        .first()
+    )
     if existing_catalog:
         catalog = existing_catalog
     else:
-        catalog = RiskCatalog(name=req_catalog['name'], organization=context, description=req_catalog['description'])
+        catalog = RiskCatalog(
+            name=req_catalog['name'],
+            organization=context,
+            description=req_catalog['description']
+        )
         request.dbsession.add(catalog)
         request.dbsession.flush()
         request.dbsession.refresh(catalog)
-    
-    def generate(catalog_name: str, catalog_description: str, email: str, org_name) -> Any:
+
+    def generate(
+        catalog_name: str,
+        catalog_description: str,
+        email: str,
+        org_name: str
+    ) -> Any:
         answers = request.json['answers']
-        user_answers = '\n'.join(list(map(lambda answer: f' - **{answer[0]}**: {answer[1]}', answers.items())))
-        examples = '\n'.join(list(map(lambda answer: f' - __{answer["name"]}__: {answer["description"]}', few_shot_examples['risks'])))
-        prompt = f"\n{user_prompts['risks']}\nExamples:\n{examples}\n\nUser-Answers:\n{user_answers}. \n\nCurrent Risk-Catalog:\n - name:{catalog_name}\n - description: {catalog_description}"
+        user_answers = '\n'.join([
+            f' - **{answer[0]}**: {answer[1]}'
+            for answer in answers.items()
+        ])
+        risk_examples = '\n'.join([
+            f' - __{answer["name"]}__: {answer["description"]}'
+            for answer in examples['risks']
+        ])
+        prompt = (
+            f"{system_prompts['risks']}\n"
+            f"\n{user_prompts['risks']}\n"
+            f"Examples:\n{risk_examples}\n\n"
+            f"User-Answers:\n{user_answers}. \n\n"
+            f"Current Risk-Catalog:\n"
+            f" - name:{catalog_name}\n"
+            f" - description: {catalog_description}"
+        )
         try:
             messages = [
-                #SystemMessage(content=sys_prompts['risks']),
                 HumanMessage(content=prompt)
             ]
-            response = request.llm.stream(messages, config={"callbacks":[request.langfuse], "langfuse_user_id": email, "tags": [org_name]})
+            config = {
+                "callbacks": [request.langfuse],
+                "langfuse_user_id": email,
+                "tags": [org_name]
+            }
+            response = request.llm.stream(messages, config=config)
             for event in response:
-               yield bytes(event.content, encoding='utf-8')
+                yield bytes(event.content, encoding='utf-8')
         except Exception as e:
-            raise StopIteration
+            raise StopIteration from e
 
     headers = [('Content-Type', 'text/event-stream'),
                ('Cache-Control', 'no-cache'),]
     response = Response(headerlist=headers)
-    response.app_iter = generate(catalog.name, catalog.description, request.user.email, context.name)
-    return response 
-    
-def generate_risk_completion(context: 'Organization', request: 'IRequest') -> 'XHRDataOrRedirect':
+    response.app_iter = generate(
+        catalog.name,
+        catalog.description,
+        request.user.email,
+        context.name
+    )
+    return response
+
+
+def generate_risk_completion(
+    context: 'Organization',
+    request: 'IRequest'
+) -> 'XHRDataOrRedirect':
     answers_form = RiskCatalogGenerationForm(None, request)
-    
+
     answers = {
-        answers_form.question_1.label.text: answers_form.question_1.data,
-        answers_form.question_2.label.text: answers_form.question_2.data,
-        answers_form.question_3.label.text: answers_form.question_3.data
+        field.label.text: field.data
+        for field in (
+            answers_form.question_1,
+            answers_form.question_2,
+            answers_form.question_3
+        )
     }
 
     table = RiskCatalogTable(context, request)
 
-    catalogs = list(few_shot_examples['catalogs'])
+    catalogs = list(examples['catalogs'])
 
     for idx, catalog in enumerate(catalogs):
-        existing_catalog: RiskCatalog | None = request.dbsession.query(RiskCatalog).filter_by(
-        name=catalog['name'], organization_id=context.id
-        ).first()
+        existing_catalog: RiskCatalog | None = (
+            request.dbsession.query(RiskCatalog)
+            .filter_by(name=catalog['name'], organization_id=context.id)
+            .first()
+        )
         if existing_catalog:
             catalogs[idx] = existing_catalog
         else:
-            catalog = RiskCatalog(name=catalog['name'], organization=context, description=catalog['description'])
+            catalog = RiskCatalog(
+                name=catalog['name'],
+                organization=context,
+                description=catalog['description']
+            )
             request.dbsession.add(catalog)
             request.dbsession.flush()
             request.dbsession.refresh(catalog)
             catalogs[idx] = catalog
-    
+
     # catalogs as list of dict using fields name, id and description
-    catalogs = [dict(name=catalog.name, description=catalog.description, id=catalog.id) for catalog in catalogs]
+    catalogs = [
+        {
+            'name': catalog.name,
+            'description': catalog.description,
+            'id': catalog.id
+        } for catalog in catalogs
+    ]
 
     return {
         'title': _('Risk Catalog'),

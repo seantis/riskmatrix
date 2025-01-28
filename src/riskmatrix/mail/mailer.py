@@ -547,8 +547,12 @@ class PostmarkMailer:
             name = f'[{self.stream}] {organization.name}: {template.name}'
         if len(name) > 100:
             name = name[:97] + '...'
-        html_content: str = markdown_to_html(template.email_content)
-        plain_content = markdown_to_plaintext(template.email_content)
+        html_content: str = markdown_to_html(  # noqa: F821
+            template.email_content
+        )
+        plain_content = markdown_to_plaintext(  # noqa: F821
+            template.email_content
+        )
 
         # replace logos with appropriate placeholders.
         html_content = html_content.replace(
