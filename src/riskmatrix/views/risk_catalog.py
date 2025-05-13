@@ -69,12 +69,16 @@ class RiskCatalogGenerationForm(Form):
     )
 
     question_3 = StringField(
-        label=_('Was für IT Angelegenheiten werden durch externe Partner betrieben?'),
+        label=_(
+            "Was für IT Angelegenheiten werden ",
+            "durch externe Partner betrieben?"
+        ),
         validators=(
             validators.DataRequired(),
             validators.Length(max=256, min=2),
         )
     )
+
 
 class RiskCatalogForm(Form):
 
@@ -230,7 +234,13 @@ def risk_catalog_view(
         )],
         'edit_form': RiskCatalogForm(None, request),
         'generate_form': RiskCatalogGenerationForm(None, request),
-        'helper_text': Markup("Risk catalogs are collections of risks to be combined with multiple different assets, looking for <a href=\"/assets\">assets</a>?")
+        'helper_text': Markup(  # noqa: MS001
+            (
+                "Risk catalogs are collections of risks to be combined with",
+                " multiple different assets, looking for ",
+                "<a href=\"/assets\">assets</a>?"
+            )
+        )
     }
 
 

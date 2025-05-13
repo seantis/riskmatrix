@@ -1,6 +1,9 @@
 from markupsafe import Markup
 from pyramid.httpexceptions import HTTPFound
-from riskmatrix.models.risk_assessment_info import RiskAssessmentInfo, RiskAssessmentState
+from riskmatrix.models.risk_assessment_info import (
+    RiskAssessmentInfo,
+    RiskAssessmentState
+)
 from sqlalchemy import func
 from wtforms import SelectMultipleField
 from wtforms import StringField
@@ -121,12 +124,20 @@ class AssetForm(Form):
 
         existing_risk_ids = {
             assessment.risk.id
-            for assessment in obj.assessments if assessment.risk_assessment_info.state != RiskAssessmentState.FINISHED
+            for assessment in obj.assessments
+            if (assessment.risk_assessment_info.state !=
+                RiskAssessmentState.FINISHED)
         }
         new_risk_ids = set()
 
         # get latest risk_assessment_info for assessment, which is not finished
-        risk_assessment_info = self.meta.dbsession.query(RiskAssessment).filter(RiskAssessment.asset_id == obj.id).filter(RiskAssessmentInfo.state != RiskAssessmentState.FINISHED).order_by(RiskAssessmentInfo.created.desc()).first()
+        risk_assessment_info = (
+            self.meta.dbsession.query(RiskAssessment)
+            .filter(RiskAssessment.asset_id == obj.id)
+            .filter(RiskAssessmentInfo.state != RiskAssessmentState.FINISHED)
+            .order_by(RiskAssessmentInfo.created.desc())
+            .first()
+        )
 
         if risk_assessment_info is None:
             risk_assessment_info = RiskAssessmentInfo(obj.organization_id)
@@ -258,7 +269,11 @@ def assets_view(
             data_table_id=table.id,
         )],
         'edit_form': AssetForm(context, request),
-        "helper_text": Markup("Assets can be attached to multiple Risk catalogs, looking to manage your <a href=\"/risk_catalog\">risks</a>? Are you ready for your <a href=\"/assessment\">assessment</a>?")
+        "helper_text": Markup(
+            "Assets can be attached to multiple Risk catalogs, "
+            "looking to manage your <a href=\"/risk_catalog\">risks</a>? "
+            "Are you ready for your <a href=\"/assessment\">assessment</a>?"
+        )
     }
 
 

@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 
 from sqlalchemy_serializer import SerializerMixin
 
+
 class Risk(SoftDeleteMixin, Base, SerializerMixin):
 
     __tablename__ = 'risk'

@@ -19,7 +19,10 @@ except ImportError:
     print()
     sys.exit(1)
 
-from riskmatrix.models.risk_assessment_info import RiskAssessmentInfo, RiskAssessmentState
+from riskmatrix.models.risk_assessment_info import (
+    RiskAssessmentInfo,
+    RiskAssessmentState
+)
 import sqlalchemy
 from pyramid.paster import bootstrap
 from pyramid.paster import get_appsettings
@@ -78,10 +81,14 @@ def get_or_create_asset(
     if asset := session.scalars(q).one_or_none():
         return asset
 
-    asset = Asset(asset_name, organization, meta={"catalogs": [risk_catalog.id]})
+    asset = Asset(
+        asset_name,
+        organization,
+        meta={"catalogs": [risk_catalog.id]}
+    )
     asset.organization_id = organization.id
     asset.meta = {"catalogs": [risk_catalog.id]}
-    
+
     session.add(asset)
     return asset
 
@@ -119,29 +126,37 @@ def get_or_create_risk_assessment(
 
     if assessment := session.scalars(q).one_or_none():
         return assessment
-    
-    # check if theres an existing instance of RiskAssessmentInfo which is open for the organization
+
+    # check if theres an existing instance of RiskAssessmentInfo
+    # which is open for the organization
     q = select(RiskAssessmentInfo).where(
         RiskAssessmentInfo.organization_id == organization.id,
         RiskAssessmentInfo.state == RiskAssessmentState.OPEN
     )
     if risk_assessment_info := session.scalars(q).one_or_none():
-        assessment = RiskAssessment(risk=risk, asset=asset, info=risk_assessment_info)
+        assessment = RiskAssessment(
+            risk=risk,
+            asset=asset,
+            info=risk_assessment_info
+        )
         session.add(assessment)
         return assessment
-    
+
     risk_assessment_info = RiskAssessmentInfo(organization_id=organization.id)
-    
+
     risk_assessment_info.state = RiskAssessmentState.OPEN
     risk_assessment_info.organization_id = organization.id
-    
+
     session.add(risk_assessment_info)
     # flush
     session.flush()
     session.refresh(risk_assessment_info)
-    
 
-    assessment = RiskAssessment(risk=risk, asset=asset, info=risk_assessment_info)
+    assessment = RiskAssessment(
+        risk=risk,
+        asset=asset,
+        info=risk_assessment_info
+    )
     session.add(assessment)
     return assessment
 
@@ -163,7 +178,9 @@ def populate_catalog(
         risk.category = risk_details['category']
         risk.description = risk_details['desc']
 
-        assessment = get_or_create_risk_assessment(risk, asset, catalog.organization, session)
+        assessment = get_or_create_risk_assessment(
+            risk, asset, catalog.organization, session
+        )
         assessment.likelihood = risk_details['likelihood']
         assessment.impact = risk_details['impact']
 

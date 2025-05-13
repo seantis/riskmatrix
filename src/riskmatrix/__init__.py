@@ -12,8 +12,6 @@ from riskmatrix.layouts.steps import show_steps
 from riskmatrix.route_factories import root_factory
 from riskmatrix.security import authenticated_user
 from riskmatrix.security_policy import SessionSecurityPolicy
-from openai import OpenAI
-from anthropic import Anthropic
 from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 
@@ -95,7 +93,7 @@ def main(
         if openai_apikey := settings.get('openai_api_key'):
             openai_client = ChatOpenAI(
                 api_key=openai_apikey,
-                model = "gpt-4o-mini",
+                model="gpt-4o-mini",
                 temperature=0.7
             )
             config.add_request_method(
@@ -114,7 +112,7 @@ def main(
                 'llm',
                 reify=True
             )
-            
+
         if langfuse_host := settings.get("langfuse_host"):
             from langfuse.callback import CallbackHandler
             langfuse_handler = CallbackHandler(
@@ -127,7 +125,6 @@ def main(
                 'langfuse',
                 reify=True
             )
- 
 
     app = config.make_wsgi_app()
     return Fanstatic(app, versioning=True)

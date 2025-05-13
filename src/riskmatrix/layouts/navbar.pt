@@ -12,6 +12,36 @@
                     </li>
                 </ul>
                 <a class="btn btn-outline-light" href="${request.route_url('logout')}"><i class="fad fa-sign-out"></i> <tal:b i18n:translate>Logout</tal:b></a>
+                &nbsp;
+                <div class="dropdown">
+                    <button class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center" id="bd-theme" type="button" aria-expanded="false" data-bs-toggle="dropdown" data-bs-display="static" aria-label="Toggle theme (light)">
+                        <i class="fa fa-sun theme-icon-active" aria-hidden="true"></i>
+                        <span class="d-lg-none ms-2" id="bd-theme-text">Toggle theme</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme-text">
+                        <li>
+                            <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="true">
+                                <i class="fa fa-sun" aria-hidden="true"></i>
+                                &nbsp;
+                                Light
+                            </button>
+                        </li>
+                        <li>
+                            <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
+                                <i class="fa fa-moon" aria-hidden="true"></i>
+                                &nbsp;
+                                Dark
+                            </button>
+                        </li>
+                        <li>
+                            <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="auto" aria-pressed="false">
+                                <i class="fa fa-laptop" aria-hidden="true"></i>
+                                &nbsp;
+                                Auto
+                            </button>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </nav>
