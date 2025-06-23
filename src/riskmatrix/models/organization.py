@@ -33,7 +33,7 @@ class Organization(Base):
     risks: Mapped[list['Risk']] = relationship(
         back_populates='organization',
     )
-    risk_catalogs:  Mapped[list['RiskCatalog']] = relationship(
+    risk_catalogs:  Mapped[list[RiskCatalog]] = relationship(
         back_populates='organization',
     )
     users: Mapped[list['User']] = relationship(

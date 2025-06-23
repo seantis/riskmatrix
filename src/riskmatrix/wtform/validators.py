@@ -39,9 +39,11 @@ def password_validator(form: 'Form', field: 'Field') -> None:
         )
         raise ValidationError(msg)
 
+
 def email_validator(form: 'Form', field: 'Field') -> None:
     if not email_regex.match(field.data):
         raise ValidationError('Not a valid email.')
+
 
 class Immutable:
     """

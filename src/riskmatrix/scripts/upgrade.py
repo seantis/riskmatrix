@@ -212,5 +212,6 @@ def main() -> None:
 
     upgrade(args)
 
+
 if __name__ == '__main__':
     main()
