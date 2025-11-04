@@ -1,7 +1,6 @@
 from markupsafe import Markup
-
-
 from typing import Any, TYPE_CHECKING
+
 if TYPE_CHECKING:
     from wtforms import Field, FormField
 
@@ -9,7 +8,6 @@ if TYPE_CHECKING:
 class LineWidget:
 
     def render_field(self, field: 'Field') -> Markup:
-
         return Markup(
             '<div class="col-auto">'
             '{label}'

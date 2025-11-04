@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 # Set the working directory
 WORKDIR /app
@@ -10,7 +10,7 @@ RUN apt-get update && \
     gcc \
     python3-dev \
     build-essential \
-    linux-headers-amd64 && \
+    linux-headers-amd64 libcairo2 libpango1.0-dev libffi-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

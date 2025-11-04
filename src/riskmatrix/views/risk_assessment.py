@@ -1,11 +1,13 @@
 import json
 import pytz
 from markupsafe import Markup
+from sedate import standardize_date
 from pyramid.httpexceptions import HTTPFound
 from riskmatrix.models.risk_assessment_info import (
     RiskAssessmentInfo,
     RiskAssessmentState,
 )
+from riskmatrix.models.risk_assessment_treatment import TreatmentType
 from sqlalchemy import func
 from sqlalchemy.orm import contains_eager
 from wtforms import StringField
@@ -32,6 +34,7 @@ from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from pyramid.interfaces import IRequest
     from sqlalchemy.orm.query import Query
+    from sqlalchemy.orm import Session
     from typing import TypeVar
 
     from riskmatrix.models import Organization
@@ -40,6 +43,58 @@ if TYPE_CHECKING:
     from riskmatrix.types import RenderData
 
     _Q = TypeVar("_Q", bound=Query[Any])
+
+
+def ensure_open_assessment_exists(
+    organization: "Organization",
+    session: "Session"
+) -> RiskAssessmentInfo:
+    """Ensure an open assessment exists for the organization.
+    
+    If no open assessment exists, create one with all asset/risk combinations.
+    Returns the open assessment.
+    """
+    # Check if there's an open assessment
+    open_assessment = (
+        session.query(RiskAssessmentInfo)
+        .filter(
+            RiskAssessmentInfo.organization_id == organization.id,
+            RiskAssessmentInfo.state != RiskAssessmentState.FINISHED
+        )
+        .first()
+    )
+    
+    # If no open assessment exists, create one with all asset/risk combinations
+    if not open_assessment:
+        from riskmatrix.models import Asset, Risk
+        from sedate import utcnow
+        
+        # Create new assessment info
+        open_assessment = RiskAssessmentInfo(
+            organization_id=organization.id,
+            #name=f"Assessment {utcnow().strftime('%Y-%m-%d %H:%M')}",
+            #state=RiskAssessmentState.OPEN
+        )
+        session.add(open_assessment)
+        session.flush()  # Get the ID
+        
+        # Get all assets and risks for the organization
+        assets = session.query(Asset).filter(Asset.organization_id == organization.id).all()
+        risks = session.query(Risk).filter(Risk.organization_id == organization.id).all()
+        
+        # Create RiskAssessment entries for all combinations
+        for asset in assets:
+            for risk in risks:
+                assessment = RiskAssessment(
+                    asset=asset,
+                    risk=risk,
+                    info=open_assessment
+                )
+                session.add(assessment)
+        
+        session.flush()
+    
+    return open_assessment
 
 
 class AssessmentForm(Form):
@@ -198,21 +253,51 @@ def compare_assessments_view(
         .filter(RiskAssessmentInfo.id == request.matchdict.get("id_compare"))
         .first()
     )
+
+    # Convert risks to the format expected by our template
+    base_risks_data = []
+    for risk in base_risks:
+        if risk.likelihood and risk.impact:
+            base_risks_data.append({
+                'id': risk.nr if hasattr(risk, 'nr') else getattr(risk, 'id', None),
+                'name': risk.name,
+                'impact': risk.impact,
+                'likelihood': risk.likelihood,
+            })
+
+    comparison_risks_data = []
+    for risk in comarison_risks:
+        if risk.likelihood and risk.impact:
+            comparison_risks_data.append({
+                'id': risk.nr if hasattr(risk, 'nr') else getattr(risk, 'id', None),
+                'name': risk.name,
+                'impact': risk.impact,
+                'likelihood': risk.likelihood,
+            })
+
     return {
         "title": _("Compare Risk Assessments"),
         "table": comp_table,
         "current_assessment": base_assessment_info,
         "comparison_assessment": comparison_assessment_info,
-        "left_plot": Markup(  # noqa: MS001
-            plot_risk_matrix(base_risks).replace(
-                '<script', f'<script nonce="{request.csp_nonce}"'
-            )
+        "left_plot": render_risk_matrix(
+            request, 
+            base_risks_data, 
+            'left', 
+            _(""),
+            font_size='small',
+            likelihood_translation=_('Likelihood'),
+            impact_translation=_('Impact'),
         ),
-        "right_plot": Markup(  # noqa: MS001
-            plot_risk_matrix(comarison_risks).replace(
-                '<script', f'<script nonce="{request.csp_nonce}"'
-            )
-        ),
+        "right_plot": render_risk_matrix(
+            request, 
+            comparison_risks_data, 
+            'right', 
+            _(""),
+            font_size='small',
+            likelihood_translation=_('Likelihood'),
+            impact_translation=_('Impact'),
+        )
     }
 
 
@@ -259,11 +344,16 @@ class AssessmentInfoTable(AJAXDataTable[RiskAssessmentInfo]):
                 assessment.state != RiskAssessmentState.FINISHED):
             return []
 
+        # Check if there's an open assessment to compare with
+        current_open = self.current_open_assessment()
+        if current_open is None:
+            return []
+
         return [
             Button(
                 url=self.request.route_url(
                     "compare_assessments",
-                    id_base=self.current_open_assessment().id,
+                    id_base=current_open.id,
                     id_compare=assessment.id
                 ),
                 icon="compress",
@@ -341,12 +431,11 @@ class AssessmentComparisonTable(AssessmentBaseTable):
     nr = DataColumn(_("Nr."))
     name = DataColumn(_("Name"))
     description = DataColumn(_("Description"), class_name="visually-hidden")
-    # category = DataColumn(_("Category"))
     asset_name = DataColumn(_("Asset"))
     likelihood = DataColumn(_("Likelihood"))
-    diff_likelihood = DataColumn(_("Change (Likelihood)"))
+    diff_likelihood = DataColumn(_("Change in Likelihood"))
     impact = DataColumn(_("Impact"))
-    diff_impact = DataColumn(_("Change (Impact)"))
+    diff_impact = DataColumn(_("Change in Impact"))
 
     def __init__(self, org: "Organization", request: "IRequest", data) -> None:
         super().__init__(org, request, id="risks-table")
@@ -429,9 +518,9 @@ class AssessmentFinishForm(Form):
             meta={"context": context, "dbsession": session},
         )
 
-    display_name = StringField(label=_("Anzeigename"), validators=())
+    display_name = StringField(label=_("Display Name"), validators=())
     end = DateTimeLocalField(
-        label=_("Geschlossen per"),
+        label=_("Closed on"),
         validators=(),
         default=datetime.now()
     )
@@ -451,19 +540,19 @@ class AssessImpactTable(AssessmentBaseTable):
                 params["data_order"] = column.sort_key(cell_data)
             request = self.request
             data = Markup("").join(
-                _RADIO_TEMPLATE.format(
-                    name=row.id,
-                    value=value,
-                    url=request.route_url(
-                        "set_impact",
-                        id=row.id,
-                        level=value,
-                    ),
-                    csrf_token=request.session.get_csrf_token(),
-                    checked="checked" if row.impact == value else "",
-                )
+                    _RADIO_TEMPLATE.format(
+                        name=row.id,
+                        value=value,
+                        url=request.route_url(
+                            "set_impact",
+                            id=row.id,
+                            level=value,
+                        ),
+                        csrf_token=request.session.get_csrf_token(),
+                        checked="checked" if row.impact == value else "",
+                    )
                 for value in range(1, 6)
-            )
+                )
             return f"<td {html_params(**params)}>{data}</td>"
         else:
             return super().cell(column, row)
@@ -486,19 +575,19 @@ class AssessLikelihoodTable(AssessmentBaseTable):
                 params["data_order"] = column.sort_key(cell_data)
             request = self.request
             data = Markup("").join(
-                _RADIO_TEMPLATE.format(
-                    name=row.id,
-                    value=value,
-                    url=request.route_url(
-                        "set_likelihood",
-                        id=row.id,
-                        level=value,
-                    ),
-                    csrf_token=request.session.get_csrf_token(),
-                    checked="checked" if row.likelihood == value else "",
-                )
+                    _RADIO_TEMPLATE.format(
+                        name=row.id,
+                        value=value,
+                        url=request.route_url(
+                            "set_likelihood",
+                            id=row.id,
+                            level=value,
+                        ),
+                        csrf_token=request.session.get_csrf_token(),
+                        checked="checked" if row.likelihood == value else "",
+                    )
                 for value in range(1, 6)
-            )
+                )
             return f"<td {html_params(**params)}>{data}</td>"
         else:
             return super().cell(column, row)
@@ -508,6 +597,9 @@ def assessment_view(
     context: "Organization",
     request: "IRequest"
 ) -> "RenderData":
+    # Ensure an open assessment exists
+    ensure_open_assessment_exists(context, request.dbsession)
+    
     table = AssessmentTable(context, request)
     return {
         "title": _("Identify Risks"),
@@ -521,6 +613,9 @@ def assess_impact_view(
     context: "Organization",
     request: "IRequest"
 ) -> "RenderData":
+    # Ensure an open assessment exists
+    ensure_open_assessment_exists(context, request.dbsession)
+    
     table = AssessImpactTable(context, request)
     return {
         "title": _("Assess Impact"),
@@ -532,6 +627,9 @@ def assess_impact_view(
 def assess_likelihood_view(
     context: "Organization", request: "IRequest"
 ) -> "RenderData":
+    # Ensure an open assessment exists
+    ensure_open_assessment_exists(context, request.dbsession)
+    
     table = AssessLikelihoodTable(context, request)
     return {
         "title": _("Assess Likelihood"),
@@ -570,15 +668,26 @@ class Cell:
 def generate_risk_matrix_view(
     context: "Organization", request: "IRequest"
 ) -> "RenderData":
+    # Ensure an open assessment exists
+    ensure_open_assessment_exists(context, request.dbsession)
+    
     table = AssessmentOverviewTable(context, request)
+    risks = list(table.query())
+    
+    # Convert risks to the format expected by our template
+    risks_data = []
+    for risk in risks:
+        if risk.likelihood and risk.impact:
+            risks_data.append({
+                'id': risk.nr if hasattr(risk, 'nr') else getattr(risk, 'id', None),
+                'name': risk.name,
+                'impact': risk.impact,
+                'likelihood': risk.likelihood,
+            })
+
     return {
         "title": _("Risk Matrix"),
-        "plot": Markup(  # noqa: MS001
-            plot_risk_matrix(table.query()).replace(
-                '<script',
-                f'<script nonce="{request.csp_nonce}"'
-            )
-        ),
+        "plot": render_risk_matrix(request, risks_data, "single", font_size='big', likelihood_translation=_('Likelihood'), impact_translation=_('Impact')),
         "table": table,
     }
 
@@ -587,140 +696,94 @@ def generate_risk_matrix_compare_view(
     context: "Organization", request: "IRequest"
 ) -> "RenderData":
     table = AssessmentOverviewTable(context, request)
+    risks = list(table.query())
+    
+    # Convert risks to the format expected by our template
+    risks_data = []
+    for risk in risks:
+        if risk.likelihood and risk.impact:
+            risks_data.append({
+                'id': risk.nr if hasattr(risk, 'nr') else getattr(risk, 'id', None),
+                'name': risk.name,
+                'impact': risk.impact,
+                'likelihood': risk.likelihood,
+                'treated': {}
+            })
+
+    # Render the risk matrix using our template
+    from pyramid.renderers import render
+    plot = render(
+        'templates/risk_matrix.pt',
+        {
+            'risks': json.dumps(risks_data),
+            'treated': False,
+            'request': request,
+            'matrix_id': 'compare'
+        },
+        request=request
+    )
+
     return {
         "title": _("Risk Matrix"),
-        "plot": Markup(  # noqa: MS001
-            plot_risk_matrix(table.query()).replace(
-                '<script',
-                f'<script nonce="{request.csp_nonce}"'
-            )
-        ),
+        "plot": Markup(plot),
         "table": table,
     }
 
 
-def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]') -> str:
-    fig = go.Figure()
-
-    colors = {
-        "green": [10, 15, 16, 20, 21, 22],
-        "yellow": [0, 1, 5, 6, 7, 11, 12, 13,  17, 18, 19,  23, 24],
-        "red": [3, 4, 8, 9, 14, 2],
-    }
-
-    for color, indices in colors.items():
-        for index in indices:
-            i, j = divmod(index, 5)
-            fig.add_shape(
-                type="rect",
-                x0=j,
-                y0=4 - i,
-                x1=j + 1,
-                y1=5 - i,
-                line={"color": "rgba(0,0,0,0.5)", "width": 0.5},
-                fillcolor=color,
-                layer="below",
-            )
-
+def plot_risk_matrix(risks: 'Query[RiskMatrixAssessment]', width: int = 600, height: int = 600) -> str:
+    # Convert risks to a list of dictionaries for JSON serialization
+    risks_data = []
     for risk in list(risks):
         if risk.likelihood and risk.impact:
-            i = risk.nr
-            y, x = risk.likelihood - 1, (risk.impact - 1)
-
-            noise_x = np.random.uniform(0.1, 0.9)
-            noise_y = np.random.uniform(0.1, 0.9)
-            x, y = float(x) + noise_x, float(y) + noise_y
-
-            fig.add_trace(
-                go.Scatter(
-                    x=[x],
-                    y=[y],
-                    text=[str(risk.nr)],
-                    name="",
-                    mode="markers+text",
-                    marker={"color": "rgba(0,0,0,0.8)", "size": 18},
-                    textposition="middle center",
-                    hoverinfo="text",
-                    hovertemplate=(
-                        f"{risk.nr} {risk.name} "
-                        f"(Impact: {risk.impact} "
-                        f"Likelihood: {risk.likelihood})"
-                    ),
-                    textfont={"color": "rgba(0,0,0,0.9)"},
-                )
-            )
-
-    fig.update_xaxes(fixedrange=True)
-    fig.update_yaxes(fixedrange=True)
-
-    # Create a clean base template without any default colors
-    clean_template = go.layout.Template()
-
-    fig.update_layout(
-        xaxis={
-            'showgrid': False,
-            'zeroline': False,
-            'showticklabels': False,
-            'range': [-0.5, 5]
-        },
-        yaxis={
-            'showgrid': False,
-            'zeroline': False,
-            'showticklabels': False,
-            'range': [-0.5, 5]
-        },
-        showlegend=False,
-        width=600,
-        height=600,
-        margin={'l': 5, 'r': 5, 't': 5, 'b': 5},
-        template=clean_template,
-        modebar={'bgcolor': 'rgba(0,0,0,0)', 'color': '#000000'},
-        paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
-        plot_bgcolor='rgba(0,0,0,0)',   # Transparent background
-        font={
-            'color': '#000000',
-            'family': 'DM Sans, sans-serif'
-        }  # Default to black text
-    )
-
-    fig.add_annotation(
-        x=2.5,
-        y=-0.2,
-        text="Impact",
-        showarrow=False,
-        font={
-            'size': 20,
-            'color': '#000000',
-            'family': 'DM Sans, sans-serif'
-        }
-    )
-    fig.add_annotation(
-        x=-0.2,
-        y=2.5,
-        text="Likelihood",
-        showarrow=False,
-        textangle=-90,
-        font={
-            'size': 20,
-            'color': '#000000',
-            'family': 'DM Sans, sans-serif'
-        }
-    )
-
-    return fig.to_html(
-        full_html=False,
-        include_plotlyjs=False,
-        config={
-            "modeBarButtonsToRemove": ["zoom", "pan", "select", "lasso2d"],
-            "displayModeBar": True,
-            "displaylogo": False,
-            "responsive": True,
-            "toImageButtonOptions": {
-                "format": "svg",
-                "filename": "risk_matrix",
+            risk_data = {
+                'id': risk.nr if hasattr(risk, 'nr') else getattr(risk, 'id', None),
+                'name': risk.name,
+                'impact': risk.impact,
+                'likelihood': risk.likelihood,
+                'treated': {}  # Empty treated object as per requirements
             }
-        }
+            risks_data.append(risk_data)
+
+    # Render the risk matrix template with the risks data
+    from pyramid.renderers import render
+    from pyramid.request import Request
+    dummy_request = Request.blank('/')
+    return render(
+        'templates/risk_matrix.pt',
+        {
+            'risks': json.dumps(risks_data),
+            'treated': False,
+            'request': dummy_request,
+            'matrix_id': 'plot'
+        },
+        request=dummy_request
     )
+
+
+class PlotRisk:
+    """Simple class to hold risk data for plotting."""
+    def __init__(self, nr: int, name: str, likelihood: int | None, impact: int | None):
+        self.nr = nr
+        self.name = name
+        self.likelihood = likelihood
+        self.impact = impact
+
+
+def render_risk_matrix(request, risks_data, matrix_id, title=None, font_size='small', likelihood_translation=None, impact_translation=None):
+    """Helper function to render a risk matrix component."""
+    from pyramid.renderers import render
+    return Markup(render(
+        'templates/components/risk_matrix.pt',
+        {
+            'risks': json.dumps(risks_data),
+            'matrix_id': matrix_id,
+            'request': request,
+            'font_size': font_size,
+            'likelihood_translation': likelihood_translation,
+            'impact_translation': impact_translation
+        },
+        request=request
+    ))
 
 
 def finish_risk_assessment_view(
@@ -728,10 +791,90 @@ def finish_risk_assessment_view(
     request: "IRequest"
 ) -> "MixedDataOrRedirect":
     if request.method == "GET":
+        # Ensure an open assessment exists
+        ensure_open_assessment_exists(context, request.dbsession)
+        
+        # Get all risk assessments for the current organization
+        session = request.dbsession
+        assessments = (
+            session.query(RiskAssessment)
+            .join(RiskAssessment.risk_assessment_info)
+            .filter(
+                RiskAssessment.organization_id == context.id,
+                RiskAssessmentInfo.state != RiskAssessmentState.FINISHED
+            )
+            .all()
+        )
+
+        # Convert pre and post treatment risks to the format expected by our template
+        pre_treatment_risks = []
+        post_treatment_risks = []
+        comparison_data = []
+        
+        for i, assessment in enumerate(assessments, 1):
+            # Only add risks that have both likelihood and impact set
+            if assessment.likelihood is not None and assessment.impact is not None:
+                # Add risk to pre-treatment plot
+                pre_treatment_risks.append({
+                    'id': i,
+                    'name': assessment.name,
+                    'impact': assessment.impact,
+                    'likelihood': assessment.likelihood,
+                })
+                
+                # Add risk to post-treatment plot if it has valid post-treatment values
+                post_impact = None
+                post_likelihood = None
+                
+                if assessment.treatment:
+                    if assessment.treatment.treatment_type == TreatmentType.REDUCE:
+                        post_impact = assessment.treatment.post_impact
+                        post_likelihood = assessment.treatment.post_likelihood
+                    else:
+                        post_impact = assessment.impact
+                        post_likelihood = assessment.likelihood
+
+                if post_impact is not None and post_likelihood is not None:
+                    post_treatment_risks.append({
+                        'id': i,
+                        'name': assessment.name,
+                        'impact': post_impact,
+                        'likelihood': post_likelihood,
+                    })
+
+                # Add comparison data
+                comparison_data.append({
+                    'name': assessment.name,
+                    'treatment_type': str(assessment.treatment.treatment_type) if assessment.treatment else 'Not Set',
+                    'pre_likelihood': assessment.likelihood,
+                    'post_likelihood': assessment.treatment.post_likelihood if assessment.treatment and assessment.treatment.treatment_type == TreatmentType.REDUCE else assessment.likelihood,
+                    'pre_impact': assessment.impact,
+                    'post_impact': assessment.treatment.post_impact if assessment.treatment and assessment.treatment.treatment_type == TreatmentType.REDUCE else assessment.impact
+                })
+
         return {
             "title": _("Finish Risk Assessment"),
             "table": AssessmentInfoTable(context, request),
             "edit_form": AssessmentFinishForm(context, request),
+            "pre_treatment_plot": render_risk_matrix(
+                request, 
+                pre_treatment_risks, 
+                'pre', 
+                _("Pre-Treatment Risk Matrix"),
+                font_size='small',
+                likelihood_translation=_('Likelihood'),
+                impact_translation=_('Impact'),
+            ),
+            "post_treatment_plot": render_risk_matrix(
+                request, 
+                post_treatment_risks, 
+                'post', 
+                _("Post-Treatment Risk Matrix"),
+                font_size='small',
+                likelihood_translation=_('Likelihood'),
+                impact_translation=_('Impact'),
+            ),
+            "comparison_data": comparison_data
         }
 
     assessment = request.dbsession.query(RiskAssessmentInfo).filter(
@@ -750,60 +893,38 @@ def finish_risk_assessment_view(
     )
 
     for entry in existing_assessment_entries:
+        # Use only() to specify what we want to include rather than exclude
+        # This is more explicit and avoids circular references
         rules = (
-            "-organization.users",
-            "-organization.risks",
-            "-organization.risk_catalogs",
-            "-organization.assets",
-            "-asset.assessments",
-            "-asset.organization",
-            "-risk.catalog.children",
-            "-risk.catalog.parent",
-            "-risk.catalog.risks",
-            "-risk.catalog.organization",
-            "-risk.assessments",
-            "-risk.organization",
-            "-risk_assessment_info"
+            "id", "impact", "likelihood", "meta", "created", "modified",
+            "asset.id", "asset.name", "asset.description",
+            "risk.id", "risk.name", "risk.description", "risk.category",
+            "risk_assessment_info.id", "risk_assessment_info.name", "risk_assessment_info.state",
+            "treatment.id", "treatment.description", "treatment.treatment_type", 
+            "treatment.post_likelihood", "treatment.post_impact", "treatment.links"
         )
-        entry.state_at_finish = json.dumps(entry.to_dict(rules=rules))
+        entry.state_at_finish = json.dumps(entry.to_dict(only=rules))
         request.dbsession.add(entry)
         request.dbsession.flush()
 
     assessment_finish_form = AssessmentFinishForm(context, request)
+    if not assessment_finish_form.validate():
+        return {
+            "form": assessment_finish_form,
+            "errors": assessment_finish_form.errors,
+        }
 
-    for a in assessment:
-        a.state = RiskAssessmentState.FINISHED
-        a.name = assessment_finish_form.display_name.data
-        if assessment_finish_form.end:
-            a.finished_at = pytz.utc.localize(assessment_finish_form.end.data)
-        else:
-            a.finished_at = func.now()
-        request.dbsession.add(a)
-        request.dbsession.flush()
+    for entry in assessment:
+        entry.state = RiskAssessmentState.FINISHED
+        # Convert naive datetime to timezone-aware UTC datetime
+        finished_datetime = assessment_finish_form.end.data
+        if finished_datetime:
+            entry.finished_at = standardize_date(finished_datetime, timezone='UTC')
+        entry.name = assessment_finish_form.display_name.data
+        request.dbsession.add(entry)
 
-    new_assessment = RiskAssessmentInfo(
-        organization_id=context.id
-    )
-    request.dbsession.add(new_assessment)
-    request.dbsession.flush()
-
-    for asset in context.assets:
-        print("asset", asset.id)
-        print("catalog_ids", asset.catalog_ids)
-        for risk_catalog in filter(
-            lambda c: c.id in asset.catalog_ids,
-            context.risk_catalogs
-        ):
-            for risk in risk_catalog.risks:
-                new_risk_assessment = RiskAssessment(
-                    asset=asset,
-                    risk=risk,
-                    info=new_assessment
-                )
-                request.dbsession.add(new_risk_assessment)
-                request.dbsession.flush()
-
-    return HTTPFound(location=request.route_url("home"))
+    request.session.flash(_("Risk Assessment finished"), "success")
+    return HTTPFound(location=request.route_url("assessment", id=context.id))
 
 
 def edit_assessment_view(

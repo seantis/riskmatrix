@@ -14,7 +14,7 @@ from .forbidden import forbidden_view
 from .home import home_view
 from .login import login_view
 from .logout import logout_view
-from .organization import organization_view
+from .organization import organization_view, create_organization_view
 from .risk import (
     delete_risk_view,
     generate_risk_completion,
@@ -31,10 +31,14 @@ from .risk_assessment import set_impact_view
 from .risk_assessment import set_likelihood_view
 from .risk_assessment import finish_risk_assessment_view
 from .risk_assessment import compare_assessments_view
+from .risk_assessment_treatment import treatment_view
+from .risk_assessment_treatment import edit_treatment_view
 from .password_retrieval import password_retrieval_view
 from .risk_catalog import delete_risk_catalog_view
 from .risk_catalog import edit_risk_catalog_view
 from .risk_catalog import risk_catalog_view
+from .user import add_user_view
+from .report import download_report_view, generate_test_risk_matrix
 
 
 from typing import TYPE_CHECKING
@@ -52,7 +56,27 @@ def includeme(config: 'Configurator') -> None:
     config.add_forbidden_view(forbidden_view)
 
     config.add_route('home', '/')
-    config.add_view(home_view, route_name='home')
+    config.add_view(
+        home_view,
+        route_name='home',
+        renderer='templates/home.pt',
+        permission=NO_PERMISSION_REQUIRED
+    )
+
+    config.add_route('create_organization', '/organization/create')
+    config.add_view(
+        create_organization_view,
+        route_name='create_organization',
+        renderer='templates/form.pt',
+        xhr=False
+    )
+    config.add_view(
+        create_organization_view,
+        route_name='create_organization',
+        renderer='json',
+        request_method='POST',
+        xhr=True
+    )
 
     config.add_route('login', '/login')
     config.add_view(
@@ -92,12 +116,32 @@ def includeme(config: 'Configurator') -> None:
     config.add_view(
         organization_view,
         route_name='organization',
-        renderer='templates/form.pt',
+        renderer='templates/organization.pt',
         xhr=False
     )
     config.add_view(
         organization_view,
         route_name='organization',
+        renderer='json',
+        request_method='POST',
+        xhr=True
+    )
+
+    # User views
+    config.add_route(
+        'add_user',
+        '/organization/users/add',
+        factory=organization_factory
+    )
+    config.add_view(
+        add_user_view,
+        route_name='add_user',
+        renderer='templates/form.pt',
+        xhr=False
+    )
+    config.add_view(
+        add_user_view,
+        route_name='add_user',
         renderer='json',
         request_method='POST',
         xhr=True
@@ -451,5 +495,58 @@ def includeme(config: 'Configurator') -> None:
         route_name='set_likelihood',
         renderer='json',
         request_method='PUT',
+        xhr=True
+    )
+
+    # Risk treatment views
+    config.add_route(
+        'treatment',
+        '/assessment/treatment',
+        factory=organization_factory
+    )
+    config.add_view(
+        treatment_view,
+        route_name='treatment',
+        renderer='templates/treatment.pt',
+    )
+
+    # PDF Report download
+    config.add_route(
+        'download_report',
+        '/assessment/report/download',
+        factory=organization_factory
+    )
+    config.add_view(
+        download_report_view,
+        route_name='download_report'
+    )
+
+    # Test route for risk matrix generation (development only)
+    config.add_route(
+        'test_risk_matrix',
+        '/assessment/test-risk-matrix',
+        factory=organization_factory
+    )
+    config.add_view(
+        generate_test_risk_matrix,
+        route_name='test_risk_matrix'
+    )
+
+    config.add_route(
+        'edit_treatment',
+        '/assessments/{id}/treatment',
+        factory=risk_assessment_factory
+    )
+    config.add_view(
+        edit_treatment_view,
+        route_name='edit_treatment',
+        renderer='templates/form.pt',
+        xhr=False
+    )
+    config.add_view(
+        edit_treatment_view,
+        route_name='edit_treatment',
+        renderer='json',
+        request_method='POST',
         xhr=True
     )

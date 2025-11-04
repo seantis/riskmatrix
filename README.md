@@ -21,11 +21,15 @@ Getting Started
 
     source venv/bin/activate
 
-- Upgrade packaging tools, if necessary.
+- Install uv for faster package management (recommended).
 
-    python -m pip install -U pip setuptools
+    pip install uv
 
-- Install the project in editable mode with its testing requirements.
+- Install the project dependencies using uv.
+
+    uv pip sync combined_requirements.lock
+
+  Alternatively, you can use pip:
 
     pip install -r requirements.txt -r test_requirements.txt
 

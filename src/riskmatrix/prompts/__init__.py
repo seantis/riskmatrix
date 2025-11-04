@@ -1,8 +1,9 @@
 import json
 from pathlib import Path
+from typing import Any
 
 
-def load_json_file(filename: str) -> dict:
+def load_json_file(filename: str) -> dict[str, Any]:
     """Load a JSON file from the prompts directory."""
     current_dir = Path(__file__).parent
     file_path = current_dir / filename

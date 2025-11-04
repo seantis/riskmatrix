@@ -17,14 +17,8 @@ from riskmatrix.data_table import maybe_escape
 from riskmatrix.i18n import _
 from riskmatrix.i18n import translate
 from riskmatrix.static import xhr_edit_js
-from riskmatrix.views.risk_catalog import (
-    RiskCatalogForm,
-    RiskCatalogGenerationForm,
-    RiskCatalogTable
-)
 from riskmatrix.wtform import Form
 from riskmatrix.prompts import system_prompts, user_prompts, examples
-
 
 from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -166,6 +160,7 @@ class RiskMetaForm(Form):
 
 
 def risk_buttons(risk: Risk, request: 'IRequest') -> list[Button]:
+    """Return a list of buttons for the risk table."""
     return [
         Button(
             url=request.route_url('edit_risk', id=risk.id),
@@ -230,6 +225,7 @@ class RisksTable(AJAXDataTable[Risk]):
 
 
 def risks_view(context: RiskCatalog, request: 'IRequest') -> 'RenderData':
+    """View for displaying risks in a catalog."""
     table = RisksTable(context, request)
     return {
         'supertitle': _('Risks', mapping={'catalog': context.name}),
@@ -404,6 +400,7 @@ def stream_risk_generation(
             for event in response:
                 yield bytes(event.content, encoding='utf-8')
         except Exception as e:
+            print(e)
             raise StopIteration from e
 
     headers = [('Content-Type', 'text/event-stream'),
@@ -457,7 +454,7 @@ def generate_risk_completion(
             catalogs[idx] = catalog
 
     # catalogs as list of dict using fields name, id and description
-    catalogs = [
+    catalog_dicts = [
         {
             'name': catalog.name,
             'description': catalog.description,
@@ -486,6 +483,6 @@ def generate_risk_completion(
         )],
         'edit_form': RiskCatalogForm(None, request),
         'generate_form': answers_form,
-        'risk_catalogs': json.dumps(catalogs),
+        'risk_catalogs': json.dumps(catalog_dicts),
         'answers': json.dumps(answers)
     }

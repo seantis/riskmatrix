@@ -270,9 +270,10 @@ def assets_view(
         )],
         'edit_form': AssetForm(context, request),
         "helper_text": Markup(
-            "Assets can be attached to multiple Risk catalogs, "
-            "looking to manage your <a href=\"/risk_catalog\">risks</a>? "
-            "Are you ready for your <a href=\"/assessment\">assessment</a>?"
+            _("Assets can be attached to multiple Risk catalogs, looking to manage your")
+            + ' <a href="/risk_catalog">' + _('risks') + '</a>? '
+            + _("Are you ready for your")
+            + ' <a href="/assessment">' + _('assessment') + '</a>?'
         )
     }
 

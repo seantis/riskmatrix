@@ -27,3 +27,6 @@ production.ini
 pyvenv.cfg
 test
 tmp/
+
+*.ini
+*.xslx

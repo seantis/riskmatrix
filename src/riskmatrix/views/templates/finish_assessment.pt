@@ -5,13 +5,95 @@
              xmlns:i18n="http://xml.zope.org/namespaces/i18n"
              i18n:domain="riskmatrix">
 
-
     <tal:block metal:fill-slot="content">
 
-        <h1>${title}</h1>
-
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>${title}</h1>
+            <div class="d-flex gap-2">
+                <a href="${request.route_url('download_report')}" 
+                   class="btn btn-primary" 
+                   title="Download PDF Report" 
+                   i18n:attributes="title"
+                   i18n:translate="">
+                    <i class="fa fa-file-pdf"></i> Download Report
+                </a>
+            </div>
+        </div>
 
         <div style="display: block; padding: 18px"></div>
+
+        <div class="container-fluid">
+            <div class="row g-4">
+                <div class="col-12 col-xl-6">
+                    <div class="matrix-container w-100" style="min-height: 400px; display: flex; flex-direction: column;">
+                        <div class="matrix-title" style="height: 24px; display: flex; align-items: center;">
+                            <h6 class="text-secondary mb-0" i18n:translate="" style="margin-left: auto; margin-right: auto;">Pre-Treatment Risk Matrix</h6>
+                        </div>
+                        <div class="matrix-content flex-grow-1 position-relative">
+                            ${structure: pre_treatment_plot}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-xl-6">
+                    <div class="matrix-container w-100" style="min-height: 400px; display: flex; flex-direction: column;">
+                        <div class="matrix-title" style="height: 24px; display: flex; align-items: center;">
+                            <h6 class="text-secondary mb-0" i18n:translate=""  style="margin-left: auto; margin-right: auto;">Post-Treatment Risk Matrix</h6>
+                        </div>
+                        <div class="matrix-content flex-grow-1 position-relative">
+                            ${structure: post_treatment_plot}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: block; padding: 24px"></div>
+
+        <div class="container container-full">
+            <h5 style="margin-left:2px; color: #ADADAD; font-weight: 800; font-style: italic; font-family: serif; margin-bottom: 12px;" i18n:translate="">Treatment Impact Overview</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th i18n:translate="">Risk</th>
+                            <th i18n:translate="">Treatment Type</th>
+                            <th i18n:translate="">Pre-Treatment Likelihood</th>
+                            <th i18n:translate="">Post-Treatment Likelihood</th>
+                            <th i18n:translate="">Pre-Treatment Impact</th>
+                            <th i18n:translate="">Post-Treatment Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr tal:repeat="risk comparison_data">
+                            <td>${risk.name}</td>
+                            <td>${risk.treatment_type}</td>
+                            <td>${risk.pre_likelihood}</td>
+                            <td>
+                                <span tal:condition="risk.treatment_type == 'Reduce'" style="color: ${risk.post_likelihood < risk.pre_likelihood and '#28a745' or '#dc3545'}">
+                                    ${risk.post_likelihood}
+                                </span>
+                                <span tal:condition="risk.treatment_type != 'Reduce'">${risk.pre_likelihood}</span>
+                            </td>
+                            <td>${risk.pre_impact}</td>
+                            <td>
+                                <span tal:condition="risk.treatment_type == 'Reduce'" style="color: ${risk.post_impact < risk.pre_impact and '#28a745' or '#dc3545'}">
+                                    ${risk.post_impact}
+                                </span>
+                                <span tal:condition="risk.treatment_type != 'Reduce'">${risk.pre_impact}</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <hr style="color: #ADADAD; margin: 24px 0;"/>
+
+        <h5 style="margin-left:2px; color: #ADADAD; font-weight: 800; font-style: italic; font-family: serif; margin-bottom: 0px;" i18n:translate="">Overview of all Risk Assessments</h5>
+        <div style="display: block; padding: 8px"></div>
+
+        ${table}
+        <div style="display: block; padding: 24px"></div>
 
         <div class="container-full">
             <form id="edit-xhr-form" method="POST" novalidate data-fields="${'[' + ','.join(f'&quot;{field}&quot;' for field in edit_form._fields) + ']'}">
@@ -27,13 +109,6 @@
                 </div>
             </form>
         </div>
-
-        <div style="display: block; padding: 8px"></div>
-
-        <h5 style="margin-left:2px; color: #ADADAD; font-weight: 800; font-style: italic; font-family: serif; margin-bottom: 0px;">Übersicht aller Risk Assessments</h5>
-        <div style="display: block; padding: 8px"></div>
-
-        ${table}
     </tal:block>
 
 </metal:block>

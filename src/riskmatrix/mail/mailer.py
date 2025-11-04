@@ -24,8 +24,6 @@ if TYPE_CHECKING:
     from .types import MailAttachment
     from .types import MailParams
     from .types import TemplateMailParams
-    from ..certificate.interfaces import ITemplate
-    from ..models import Organization
     from ..types import JSON, JSONArray, JSONObject
     MailID = str
     AnyMailParams = MailParams | TemplateMailParams

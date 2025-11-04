@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      i18n:domain="riskmatrix">
+<head>
+  <meta charset="utf-8" />
+  <title>Risk Assessment Report</title>
+  <style>
+    /* Font declarations */
+    @font-face {
+      font-family: OpenDyslexic;
+      font-weight: bold;
+      src: url(fonts/OpenDyslexic-Bold.otf);
+    }
+    @font-face {
+      font-family: OpenDyslexic;
+      font-weight: normal;
+      src: url(fonts/OpenDyslexic-Regular.otf);
+    }
+    @font-face {
+      font-family: 'DM Serif Display';
+      font-style: normal;
+      font-weight: 400;
+      src: local(''),
+           url('/static/fonts/dm-serif-display-v5-latin-ext_latin-regular.woff2') format('woff2'),
+           url('/static/fonts/dm-serif-display-v5-latin-ext_latin-regular.woff') format('woff');
+    }
+
+    /* Page settings */
+    @page {
+      margin: 2cm 2cm 3cm 2cm;
+      size: 148mm 210mm;
+    }
+    @page landscape {
+      margin: 2cm 2cm 3cm 2cm;
+      size: 210mm 148mm; /* A5 landscape */
+    }
+    @page :left {
+      @bottom-left {
+        content: counter(page);
+        position: absolute;
+        z-index: -1;
+      }
+      @bottom-right {
+        content: string(heading);
+        position: absolute;
+        z-index: -1;
+      }
+    }
+    @page :right {
+      @bottom-left {
+        content: string(heading);
+        position: absolute;
+        z-index: -1;
+      }
+      @bottom-right {
+        content: counter(page);
+        position: absolute;
+        z-index: -1;
+      }
+    }
+    @page full {
+      @bottom-right {
+        content: none;
+      }
+      @bottom-left {
+        content: none;
+      }
+      margin: 0;
+    }
+    @page :blank,
+    @page clean {
+      @bottom-right {
+        content: none;
+      }
+      @bottom-left {
+        content: none;
+      }
+    }
+
+    /* Global settings */
+    html {
+    }
+    body {
+      margin: 0;
+      color: #212529;
+      font-size: 10pt;
+      line-height: 1.15;
+      font-family: Times, "Times New Roman", serif;
+    }
+    p {
+      line-height: 1.15;
+      text-align: justify;
+      margin: 0.5em 0;
+    }
+    img.bg {
+      display: block;
+      margin: 2em auto;
+      max-width: 70%;
+    }
+    /* Hide default H1 (used for accessibility) */
+    h1 {
+     color: #474747;
+    }
+
+    .title-overlay div {
+      color: #858585;
+    }
+
+    section {
+      /* removing break-after: right */
+    }
+    aside {
+      display: flex;
+      justify-content: center;
+    }
+    aside figure {
+      flex: none;
+      margin: 0;
+      padding: 1em;
+      text-align: center;
+    }
+    aside img {
+      border: 0.4mm solid white;
+      border-radius: 50%;
+      margin: 0 auto;
+      max-width: 14mm;
+    }
+    .character {
+      break-after: avoid;
+      margin: auto;
+      max-width: 14mm;
+    }
+    #authors {
+      padding-top: 10em;
+      page: clean;
+      text-align: center;
+    }
+    #authors img {
+      display: block;
+      margin: auto;
+      width: 75%;
+    }
+    #authors p {
+      font-size: 1.3em;
+      margin: 5em 0 1em;
+      text-align: center;
+    }
+    #authors dl {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #authors dt {
+      display: block;
+      font-size: 0.8em;
+      line-height: 2rem;
+      width: 100%;
+    }
+    #authors dd {
+      margin: 0 0.5em;
+      padding: 0;
+    }
+    #contents {
+      page: clean;
+    }
+    #contents ul {
+      display: block;
+      margin: 1em 0;
+      padding: 0;
+    }
+    #contents li {
+      display: block;
+    }
+    #contents a {
+      color: inherit;
+      text-decoration: none;
+    }
+    #contents a::before {
+      content: target-counter(attr(href), h2-counter) '. ' target-text(attr(href));
+    }
+    #contents a::after {
+      content: target-counter(attr(href), page);
+      float: right;
+    }
+    .outro {
+      border-radius: 50% 50% 0 0 / 15mm 15mm 0 0;
+      display: block;
+      height: 90mm;
+      left: -30mm;
+      max-width: none;
+      object-fit: cover;
+      position: absolute;
+      top: 120mm;
+      width: 168mm;
+      z-index: -1;
+    }
+
+    .fullpage {
+      page: full;
+      position: relative;
+      height: 210mm;
+      width: 148mm;
+      overflow: hidden;
+      page-break-after: always;
+    }
+    .fullpage img.bg {
+      bottom: 0;
+      height: 210mm;
+      left: 0;
+      margin: 0;
+      max-width: none;
+      object-fit: cover;
+      position: absolute;
+      width: 148mm;
+      z-index: 1;
+    }
+    .fullpage:last-child {
+      break-before: left;
+    }
+
+    /* Title overlay styling */
+    .title-overlay {
+      position: absolute;
+      bottom: 20mm;
+      left: 15mm;
+      z-index: 2;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    .title-overlay h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24pt;
+      margin: 0 0 8px 0;
+      font-weight: bold;
+    }
+    .title-overlay .organization-name {
+      font-size: 16pt;
+      font-weight: normal;
+      opacity: 0.9;
+      margin-bottom: 4px;
+    }
+    .title-overlay .report-date {
+      font-size: 12pt;
+      font-weight: normal;
+      opacity: 0.8;
+    }
+
+    /* --- Risk Assessment Report Custom Styling --- */
+    /* For report sections (non-cover pages) we override the chapter-style h2 */
+    h2.report-section {
+      font-size: 12pt;
+      font-weight: bold;
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+    }
+    h3 {
+      font-size: 10pt;
+      font-weight: bold;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
+    h4 {
+      font-size: 10pt;
+      font-weight: bold;
+      font-style: italic;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
+
+    /* Table styling */
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .report-table th,
+    .report-table td {
+      border: 1px solid #dee2e6;
+      padding: 8px;
+      text-align: left;
+    }
+    .report-table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+
+    /* Page breaks */
+    .page-break {
+      page-break-after: always;
+    }
+
+    /* Risk details */
+    .risk-detail {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+    }
+    .risk-detail h4 {
+      margin-top: 0;
+      color: #495057;
+    }
+    section:not(.fullpage) {
+      margin-bottom: 2em;
+    }
+    /* Landscape page for detailed analysis */
+    .landscape-page {
+      page: landscape;
+      page-break-before: always;
+      page-break-after: always;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    /* Table adjustments for landscape orientation */
+    .landscape-page .report-table {
+      font-size: 9pt; /* Slightly smaller font to fit more content */
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .landscape-page .report-table th:nth-child(1),
+    .landscape-page .report-table td:nth-child(1) {
+      width: 8%; /* Risk ID column */
+    }
+    .landscape-page .report-table th:nth-child(2),
+    .landscape-page .report-table td:nth-child(2) {
+      width: 25%; /* Name column */
+    }
+    .landscape-page .report-table th:nth-child(3),
+    .landscape-page .report-table td:nth-child(3) {
+      width: 12%; /* Impact column */
+    }
+    .landscape-page .report-table th:nth-child(4),
+    .landscape-page .report-table td:nth-child(4) {
+      width: 15%; /* Likelihood column */
+    }
+    .landscape-page .report-table th:nth-child(5),
+    .landscape-page .report-table td:nth-child(5) {
+      width: 40%; /* Treatment column - more space for reasoning text */
+    }
+    /* Ensure text wraps properly in landscape table cells */
+    .landscape-page .report-table td {
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      hyphens: auto;
+      padding: 6px; /* Slightly reduce padding to save space */
+    }
+    .landscape-page .report-table th {
+      padding: 6px;
+      font-size: 8.5pt; /* Slightly smaller headers */
+    }
+  </style>
+</head>
+<body>
+
+  <title>Risk Assessment Report</title>
+
+  <section class="fullpage">
+    <img class="bg" src="${request.static_url('riskmatrix:static/eisklettern_square.jpg')}" alt="Risk Matrix">
+    <div class="title-overlay">
+      <img class="organization-logo" src="https://seantis.ch/static/img/logo.svg" alt="Seantis Logo" style="height: 32px;margin-bottom: 8px;">
+      <h1>Risk Assessment Report</h1>
+      <div class="report-date">${assessment.finished_at.strftime('%B %d, %Y') if assessment.finished_at else assessment.created.strftime('%B %d, %Y')}</div>
+    </div>
+  </section>
+
+  <!-- Introduction -->
+  <div class="page-break">
+    <h2 class="report-section">Introduction</h2>
+    <p>
+      ISO/IEC 27002:2022 is an internationally recognized standard that provides a comprehensive set of information security controls and implementation guidance. It serves as a reference for selecting and implementing security controls as part of an organization's risk treatment process. Adopting ISO/IEC 27002:2022 in risk assessment is crucial because it ensures a <strong>risk-based approach</strong> to security management. In practice, this means that security efforts and resources are focused on actual risks that could impact the organization, rather than on arbitrary or ad-hoc measures. For example, the standard explicitly emphasizes the importance of rigorous risk assessment and management so that organizations consistently identify potential threats and address them with appropriate controls.
+    </p>
+    <p>
+      The necessity of ISO/IEC 27002:2022 in modern security programs is further underscored by its updated control set. The 2022 edition <strong>updates and refines security controls</strong> to reflect current developments and best practices in cybersecurity. By aligning risk assessment activities with this updated standard, organizations ensure they are considering the latest threats (such as advanced cyber-attacks, supply chain risks, or cloud security issues) and applying the most relevant controls to mitigate them. In summary, integrating ISO/IEC 27002:2022 into the risk assessment process helps maintain a structured, consistent, and up-to-date approach to information security management, which is vital for protecting assets and maintaining stakeholder trust in today's evolving threat landscape.
+    </p>
+
+    <h3>Definitions</h3>
+    <p>
+      <strong>Risk:</strong> In the context of ISO 27002, a risk is defined as the "effect of uncertainty on objectives". This effect can be positive or negative, but in information security it typically refers to potential negative outcomes. Risk is often expressed as a combination of the potential consequences of an event (impact) and the likelihood of that event occurring. In other words, an information security risk is measured by considering how bad the outcome would be <em>if</em> it happens (impact) and how probable it is that it <em>will</em> happen (likelihood).
+    </p>
+    <p>
+      <strong>Asset:</strong> An asset is "anything that has value to the organization and which, therefore, requires protection." In a security context, assets include not only physical items like hardware and facilities, but also information, software, services, and people with important skills. Essentially, any resource that you care about – from databases and confidential data to company reputation – can be considered an asset if its loss or compromise would negatively affect the organization.
+    </p>
+    <p>
+      <strong>Risk Treatment:</strong> Risk treatment is the process of <strong>modifying or managing risk</strong>. After risks are identified and evaluated, the organization must decide how to address each risk. According to ISO standards, risk treatment involves selecting and implementing one or more options for handling the risk. Common risk treatment options include:
+    </p>
+    <ul>
+      <li><strong>Mitigation (Reduction):</strong> Implementing security controls or other measures to reduce the likelihood or impact of the risk.</li>
+      <li><strong>Avoidance:</strong> Altering plans or circumstances to prevent the risk entirely.</li>
+      <li><strong>Transfer (Sharing):</strong> Shifting the risk to a third party, such as through insurance or outsourcing.</li>
+      <li><strong>Acceptance:</strong> Acknowledging the risk and deciding to accept it without additional action.</li>
+    </ul>
+    <p>
+      Each treatment decision should be recorded in a risk treatment plan, describing how the chosen option will be implemented to manage the risk. The goal of risk treatment is to reduce residual risk to an acceptable level aligned with the organization's risk appetite.
+    </p>
+
+    <h3>Impact and Likelihood Scales</h3>
+    <p>
+      The risk assessment uses a 5-point scale for both <strong>Impact</strong> and <strong>Likelihood</strong>. Impact refers to the severity of the consequences if a risk event occurs, while Likelihood refers to the probability of the event occurring. The scales below provide a standardized dictionary for these ratings:
+    </p>
+    <p><strong>Impact Scale (Levels 1–5):</strong></p>
+    <ol>
+      <li><strong>Level 1 – Insignificant:</strong> Negligible consequences with little to no impact.</li>
+      <li><strong>Level 2 – Minor:</strong> Low impact causing minor disruptions.</li>
+      <li><strong>Level 3 – Moderate:</strong> Noticeable impact requiring management attention.</li>
+      <li><strong>Level 4 – Major:</strong> Serious consequences with significant impact.</li>
+      <li><strong>Level 5 – Severe (Catastrophic):</strong> Devastating impact threatening the organization's viability.</li>
+    </ol>
+    <p><strong>Likelihood Scale (Levels 1–5):</strong></p>
+    <ol>
+      <li><strong>Level 1 – Rare:</strong> Highly unlikely, almost out of scope.</li>
+      <li><strong>Level 2 – Unlikely:</strong> Low probability under normal conditions.</li>
+      <li><strong>Level 3 – Possible:</strong> Realistic chance of occurrence.</li>
+      <li><strong>Level 4 – Likely:</strong> More probable than not.</li>
+      <li><strong>Level 5 – Almost Certain:</strong> Expected to occur with near certainty.</li>
+    </ol>
+
+    <h3>Risk Assessment Process Overview</h3>
+    <p>
+      Conducting a risk assessment in alignment with ISO/IEC 27002:2022 involves a systematic approach. The process includes:
+    </p>
+    <ol>
+      <li><strong>Establish Context &amp; Criteria:</strong> Define the scope, objectives, and evaluation criteria including asset identification and risk criteria.</li>
+      <li><strong>Identify Risks:</strong> List potential risks to in-scope assets using various techniques (e.g., brainstorming, checklists, expert interviews).</li>
+      <li><strong>Analyze Risks:</strong> Evaluate the likelihood and impact of each risk, considering existing controls.</li>
+      <li><strong>Evaluate Risks:</strong> Compare risks against defined risk criteria to prioritize them for treatment.</li>
+      <li><strong>Treat Risks:</strong> Decide on appropriate risk treatment options (mitigation, avoidance, transfer, or acceptance) and formulate a risk treatment plan.</li>
+      <li><strong>Monitor and Review:</strong> Continuously monitor and periodically reassess risks and the effectiveness of controls.</li>
+    </ol>
+    <p>
+      This systematic process ensures that security controls are implemented based on specific risks and align with organizational objectives.
+    </p>
+  </div>
+
+  <!-- Risk Matrix Visualization -->
+  <div class="page-break">
+    <h2 class="report-section">Risk Matrix</h2>
+    <p>
+      The risk matrix below provides a visual representation of all identified risks. Each risk is positioned according to its impact (horizontal axis) and likelihood (vertical axis). The colors represent the risk level:
+    </p>
+    <ul>
+      <li><span style="color: #b91c1c; font-weight: bold;">Red</span> - High risk: Immediate action required</li>
+      <li><span style="color: #d97706; font-weight: bold;">Yellow</span> - Medium risk: Action plan required</li>
+      <li><span style="color: #15803d; font-weight: bold;">Green</span> - Low risk: Monitor and review periodically</li>
+    </ul>
+    <div style="text-align: center; margin: 30px 0;">
+      <img src="${risk_matrix_image}" alt="Risk Matrix Visualization" style="max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 5px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+      <div style="margin-top: 10px; font-style: italic; color: #4b5563; font-size: 0.9em;">Risk Matrix: Numbers represent Risk IDs</div>
+    </div>
+    <p>
+      This visual assessment helps prioritize risks based on their potential impact and likelihood of occurrence. High-risk items (red zone) typically require immediate attention and comprehensive mitigation strategies, while medium-risk items (yellow zone) should be addressed with appropriate controls. Low-risk items (green zone) may be accepted with minimal controls but should still be monitored.
+    </p>
+  </div>
+
+  <!-- Risk Details -->
+  <div class="landscape-page">
+    <h2 class="report-section">Detailed Risk Analysis</h2>
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Risk ID</th>
+          <th>Name</th>
+          <th>Impact</th>
+          <th>Likelihood</th>
+          <th>Treatment</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr tal:repeat="risk risks">
+          <td>${risk['id']}</td>
+          <td>${risk['name']}</td>
+          <td>${risk['impact']}</td>
+          <td>${risk['likelihood']}</td>
+          <td>${risk.get('treatment', 'Not specified')}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Treatment Summary -->
+  <div class="page-break">
+    <h2 class="report-section">Treatment Summary</h2>
+    <div class="risk-detail" tal:repeat="risk risks">
+      <h4>Risk ${risk['id']}: ${risk['name']}</h4>
+      <p><strong>Current Rating:</strong> Impact ${risk['impact']}, Likelihood ${risk['likelihood']}</p>
+      <p><strong>Treatment Approach:</strong> ${risk.get('treatment_type', 'Not specified')}</p>
+      <p><strong>Treatment Details:</strong> ${risk.get('treatment_details', 'No details provided')}</p>
+    </div>
+  </div>
+
+  <!-- Conclusion -->
+  <div>
+    <h2 class="report-section">Conclusion</h2>
+    <h3>Summary of Findings</h3>
+    <p>
+      The risk assessment of the organization's information security environment has been completed in accordance with ISO/IEC 27002:2022 guidelines. The assessment identified and evaluated [X] risks across the defined scope (e.g., departments, systems, or assets examined). Each risk was assessed for its likelihood and impact, resulting in a clear risk profile indicating which risks are high, medium, or low priority. [Insert brief summary of risk profile: for instance, "N high risks, M medium risks, and L low risks were identified."] The analysis highlighted key areas of concern, such as [mention any critical risk themes – e.g., "unauthorized access to sensitive data" or "insufficient backup and recovery controls"], which exceeded the organization's risk acceptance criteria. At the same time, several controls were confirmed to be effective, addressing [mention any areas where controls are strong – e.g., "network perimeter security" or "employee security awareness"] and keeping some risks at acceptable levels. Overall, this systematic evaluation provides management with a prioritized understanding of where the organization is most vulnerable and where it is adequately protected.
+    </p>
+    <h3>Risk Treatment and Next Steps</h3>
+    <p>
+      Based on the findings, the organization will develop and implement a comprehensive risk treatment plan to address the identified unacceptable risks. High-priority risks (those rated above the acceptable threshold) will be mitigated with appropriate controls or actions, in line with ISO/IEC 27002:2022 recommendations for control selection. For each such risk, specific treatments have been proposed [or will be determined] – for example, [briefly mention a couple of key treatments, e.g., "implement multi-factor authentication to mitigate unauthorized access risk" or "upgrade backup systems to reduce data loss risk"]. Medium-level risks may be treated or monitored depending on cost-benefit analysis and risk appetite, while low-level risks will be documented and revisited in future reviews. The risk treatment decisions, including any risk acceptances, will be documented and approved by management to ensure accountability.
+    </p>
+    <p>
+      Going forward, it is crucial that the effectiveness of implemented controls is monitored and that the risk environment is regularly reviewed for changes. The information security team will schedule periodic risk review meetings (for instance, quarterly or annually) to update the risk register, track the progress of treatment actions, and capture any new risks that emerge. This continual monitoring and re-assessment process ensures that the organization's risk profile remains up-to-date and that the security controls evolve in response to new threats or business changes. By maintaining this cycle of assessment, treatment, and review, the organization demonstrates ongoing compliance with ISO 27001/27002 principles and a commitment to continuous improvement in its information security management.
+    </p>
+    <p>
+      Finally, the results of this risk assessment and the subsequent risk treatment plan will be communicated to all relevant stakeholders. Management endorsement of the plan will be obtained to confirm that the proposed risk mitigations align with business objectives and risk appetite. [Optional: Include a statement about residual risk and acceptance, e.g., "Management acknowledges the residual risks remaining after treatment and accepts them as within the organizational risk tolerance."] Upon completion of the planned treatments, the organization will have an improved security posture with reduced exposure to the most significant risks identified in this assessment. This structured approach to risk assessment – leveraging the ISO/IEC 27002:2022 framework – provides a strong foundation for the organization to protect its assets and achieve its strategic objectives securely. The organization will continue to refine its risk management process, ensuring that information security remains proactive and aligned with both industry best practices and evolving risk conditions.
+    </p>
+  </div>
+
+  <!-- Approval and Signature Section -->
+  <div class="page-break">
+    <h2 class="report-section">Approval and Signature</h2>
+    <p>
+      This risk assessment report has been reviewed and approved by the undersigned, confirming that the findings, risk ratings, and treatment plans have been accurately recorded and are accepted by the organization.
+    </p>
+    
+    <div style="margin-top: 60px;">
+      <div style="display: inline-block; width: 48%;">
+        <div style="border-bottom: 1px solid #000; margin-bottom: 5px; height: 30px;"></div>
+        <div style="font-weight: bold;">Authorized Signature</div>
+      </div>
+      <div style="display: inline-block; width: 48%; float: right;">
+        <div style="border-bottom: 1px solid #000; margin-bottom: 5px; height: 30px;"></div>
+        <div style="font-weight: bold;">Date</div>
+      </div>
+    </div>
+    
+    <div style="margin-top: 40px;">
+      <div style="display: inline-block; width: 48%;">
+        <div style="border-bottom: 1px solid #000; margin-bottom: 5px; height: 30px;"></div>
+        <div style="font-weight: bold;">Name (Print)</div>
+      </div>
+      <div style="display: inline-block; width: 48%; float: right;">
+        <div style="border-bottom: 1px solid #000; margin-bottom: 5px; height: 30px;"></div>
+        <div style="font-weight: bold;">Position/Title</div>
+      </div>
+    </div>
+    
+    <div style="margin-top: 60px;">
+      <div style="display: inline-block; width: 100%;">
+        <div style="border-bottom: 1px solid #000; margin-bottom: 5px; height: 30px;"></div>
+        <div style="font-weight: bold;">Organization</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 80px; font-style: italic; text-align: center; color: #666; font-size: 9pt;">
+      <p>This report was generated on ${assessment.finished_at.strftime('%B %d, %Y') if assessment.finished_at else assessment.created.strftime('%B %d, %Y')}</p>
+      <p>ISO/IEC 27002:2022 Risk Assessment</p>
+    </div>
+  </div>
+</body>
+</html>

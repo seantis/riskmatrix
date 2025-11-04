@@ -14,6 +14,7 @@ from uuid import uuid4
 from riskmatrix.models import Asset
 from riskmatrix.models import Risk
 from riskmatrix.models.risk_assessment_info import RiskAssessmentInfo
+from riskmatrix.models.risk_assessment_treatment import RiskAssessmentTreatment
 from riskmatrix.orm.meta import Base
 from riskmatrix.orm.meta import UUIDStr
 from riskmatrix.orm.meta import UUIDStrPK
@@ -75,6 +76,13 @@ class RiskAssessment(SoftDeleteMixin, Base, SerializerMixin):
     risk_assessment_info_id: Mapped[UUIDStr] = mapped_column(
         ForeignKey('risk_assessment_info.id', ondelete='CASCADE'),
         index=True,
+    )
+
+    treatment: Mapped[RiskAssessmentTreatment | None] = relationship(
+        back_populates='risk_assessment',
+        lazy='joined',
+        cascade='all, delete-orphan',
+        uselist=False
     )
 
     def __init__(

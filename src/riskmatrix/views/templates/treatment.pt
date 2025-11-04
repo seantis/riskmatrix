@@ -1,0 +1,391 @@
+<metal:block use-macro="main_template"
+             xmlns="http://www.w3.org/1999/xhtml"
+             xmlns:tal="http://xml.zope.org/namespaces/tal"
+             xmlns:metal="http://xml.zope.org/namespaces/metal"
+             xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+             i18n:domain="riskmatrix">
+
+    <tal:block metal:fill-slot="content">
+        <style>
+            :root {
+                --background: 220 50% 98%;
+                --foreground: 220 30% 20%;
+                --card: 0 0% 100%;
+                --card-foreground: 220 30% 20%;
+                --popover: 0 0% 100%;
+                --popover-foreground: 220 30% 20%;
+                --primary: 220 40% 50%;
+                --primary-foreground: 220 40% 98%;
+                --secondary: 220 20% 92%;
+                --secondary-foreground: 220 30% 20%;
+                --muted: 220 20% 92%;
+                --muted-foreground: 220 20% 50%;
+                --accent: 220 20% 92%;
+                --accent-foreground: 220 30% 20%;
+                --destructive: 0 70% 80%;
+                --destructive-foreground: 0 0% 98%;
+                --border: 220 20% 90%;
+                --input: 220 20% 90%;
+                --ring: 220 40% 50%;
+                --radius: 0.75rem;
+            }
+
+            /* Accordion styling */
+            .accordion-item {
+                border: 1px solid hsl(var(--border));
+                border-radius: var(--radius);
+                margin-bottom: 0.5rem;
+                background: hsl(var(--card));
+            }
+
+            .accordion-button {
+                padding: 1rem;
+                border-radius: var(--radius);
+                background: transparent;
+            }
+
+            .accordion-button:not(.collapsed) {
+                background: transparent;
+                color: inherit;
+                box-shadow: none;
+            }
+
+            .accordion-button:focus {
+                box-shadow: none;
+                border-color: hsl(var(--ring));
+            }
+
+            /* Treatment badges */
+            .treatment-type {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.25rem 0.75rem;
+                border-radius: calc(var(--radius) * 0.75);
+                font-size: 0.875rem;
+                font-weight: 500;
+            }
+            
+            .treatment-type.reduce { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+            .treatment-type.accept { background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground)); }
+            .treatment-type.avoid { background: hsl(var(--destructive)); color: hsl(var(--destructive-foreground)); }
+            .treatment-type.transfer { background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); }
+
+            /* Form controls */
+            .form-group {
+                margin-bottom: 1.5rem;
+            }
+
+            .form-label {
+                color: hsl(var(--muted-foreground));
+                font-size: 0.875rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .form-control {
+                background: transparent;
+                border: 1px solid hsl(var(--input));
+                border-radius: var(--radius);
+                padding: 0.75rem 1rem;
+                font-size: 0.95rem;
+                transition: all 0.15s;
+            }
+
+            .form-control:focus {
+                outline: none;
+                border-color: hsl(var(--ring));
+                box-shadow: 0 0 0 1px hsl(var(--ring));
+            }
+
+            /* Treatment Select */
+            .treatment-select {
+                position: relative;
+                width: 100%;
+            }
+
+            .treatment-button {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+                padding: 0.75rem 1rem;
+                background: transparent;
+                border: 1px solid hsl(var(--input));
+                border-radius: var(--radius);
+                color: hsl(var(--foreground));
+                font-size: 0.95rem;
+                text-align: left;
+                cursor: pointer;
+                transition: all 0.15s ease;
+            }
+
+            .treatment-button:hover {
+                background: hsl(var(--accent));
+            }
+
+            .treatment-button:focus {
+                outline: none;
+                border-color: hsl(var(--ring));
+                box-shadow: 0 0 0 1px hsl(var(--ring));
+            }
+
+            .treatment-options {
+                position: absolute;
+                top: calc(100% + 5px);
+                left: 0;
+                width: 100%;
+                background: hsl(var(--background));
+                border: 1px solid hsl(var(--border));
+                border-radius: var(--radius);
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-10px);
+                transition: all 0.2s ease;
+                z-index: 100;
+            }
+
+            .treatment-options.show {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+            }
+
+            .treatment-option {
+                padding: 0.75rem 1rem;
+                cursor: pointer;
+                transition: all 0.15s ease;
+            }
+
+            .treatment-option:hover {
+                background: hsl(var(--accent));
+            }
+
+            .treatment-option.selected {
+                background: hsl(var(--accent));
+                color: hsl(var(--accent-foreground));
+            }
+
+            .chevron {
+                width: 16px;
+                height: 16px;
+                transition: transform 0.2s ease;
+            }
+
+            .treatment-button[aria-expanded="true"] .chevron {
+                transform: rotate(180deg);
+            }
+
+            /* Number inputs */
+            .number-container {
+                display: flex;
+                gap: 0.25rem;
+            }
+            
+            .number-input {
+                display: none;
+            }
+            
+            .number-label {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                background: transparent;
+                border: 1px solid hsl(var(--input));
+                border-radius: var(--radius);
+                color: hsl(var(--muted-foreground));
+                cursor: pointer;
+                font-size: 0.95rem;
+                transition: all 0.15s;
+            }
+            
+            .number-label:hover {
+                background: hsl(var(--accent));
+                color: hsl(var(--accent-foreground));
+            }
+            
+            .number-input:checked + .number-label {
+                background: hsl(var(--primary));
+                border-color: hsl(var(--primary));
+                color: hsl(var(--primary-foreground));
+            }
+
+            /* Links section */
+            .link-row {
+                display: flex;
+                gap: 0.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .btn-icon {
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: var(--radius);
+                border: 1px solid hsl(var(--input));
+                background: transparent;
+                color: hsl(var(--muted-foreground));
+                transition: all 0.15s;
+            }
+
+            .btn-icon:hover {
+                background: hsl(var(--accent));
+                color: hsl(var(--accent-foreground));
+                border-color: transparent;
+            }
+
+            .btn-icon.delete:hover {
+                background: hsl(var(--destructive));
+                color: hsl(var(--destructive-foreground));
+            }
+
+            /* Metrics */
+            .metric {
+                font-size: 0.875rem;
+                color: hsl(var(--muted-foreground));
+            }
+
+            .metric-value {
+                font-weight: 500;
+                color: hsl(var(--foreground));
+                margin-left: 0.25rem;
+            }
+
+            /* Smooth transitions */
+            * {
+                transition-property: color, background-color, border-color, box-shadow;
+                transition-duration: 150ms;
+            }
+        </style>
+
+        <h1 i18n:translate="">${title}</h1>
+
+        <div class="mb-3">
+            <input type="text" class="form-control" id="treatment-search" 
+                   i18n:attributes="placeholder" 
+                   placeholder="Search in risk name or description...">
+        </div>
+
+        <div class="accordion" id="treatmentAccordion">
+            <tal:block tal:repeat="assessment table.query()">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-${assessment.id}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapse-${assessment.id}" aria-expanded="false"
+                                aria-controls="collapse-${assessment.id}">
+                            <div class="row w-100 align-items-center">
+                                <div class="col-4">${assessment.name}</div>
+                                <div class="col-4">
+                                    <div class="d-flex gap-4">
+                                        <span class="metric"><span i18n:translate="">Likelihood</span> <span class="metric-value">${assessment.likelihood or '-'}</span></span>
+                                        <span class="metric"><span i18n:translate="">Impact</span> <span class="metric-value">${assessment.impact or '-'}</span></span>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <span tal:condition="assessment.treatment" class="treatment-type ${assessment.treatment.treatment_type.name.lower()}" i18n:translate="">${assessment.treatment.treatment_type}</span>
+                                    <span tal:condition="not:assessment.treatment">-</span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse-${assessment.id}" class="accordion-collapse collapse"
+                         aria-labelledby="heading-${assessment.id}" data-bs-parent="#treatmentAccordion">
+                        <div class="accordion-body">
+                            <form id="treatment-form-${assessment.id}" method="POST" 
+                                  action="${request.route_url('edit_treatment', id=assessment.id)}"
+                                  class="treatment-form" data-assessment-id="${assessment.id}">
+                                <input type="hidden" name="csrf_token" value="${layout.csrf_token()}" />
+                                
+                                <div class="row gx-5">
+                                    <div class="col-md-8">
+                                        <div class="form-group">
+                                            <label class="form-label" i18n:translate="">Description</label>
+                                            <textarea class="form-control" name="description" rows="3"
+                                                      data-autosave="false">${assessment.treatment.description if assessment.treatment else ''}</textarea>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label" i18n:translate="">Links</label>
+                                            <tal:block tal:define="links assessment.treatment.links if assessment.treatment else []">
+                                                <div tal:repeat="link links" class="link-row">
+                                                    <input type="text" class="form-control" name="links-${repeat.link.index}"
+                                                           value="${link}" data-autosave="false"/>
+                                                    <button class="btn-icon delete remove-link" type="button" i18n:attributes="title" title="Delete">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="link-row">
+                                                    <input type="text" class="form-control" name="links-${len(links)}"
+                                                           i18n:attributes="placeholder"
+                                                           placeholder="Add new link..." data-autosave="false"/>
+                                                    <button class="btn-icon add-link" type="button" i18n:attributes="title" title="Add link">
+                                                        <i class="fas fa-plus"></i>
+                                                    </button>
+                                                </div>
+                                            </tal:block>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label class="form-label" i18n:translate="">Treatment Type</label>
+                                            <div class="treatment-select">
+                                                <button type="button" class="treatment-button" aria-haspopup="listbox" aria-expanded="false">
+                                                    <span>${assessment.treatment.treatment_type if assessment.treatment else 'Select type...'}</span>
+                                                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M6 9l6 6 6-6"/>
+                                                    </svg>
+                                                </button>
+                                                <div class="treatment-options" role="listbox">
+                                                    <tal:block tal:repeat="type python:['REDUCE', 'ACCEPT', 'AVOID', 'TRANSFER']">
+                                                        <div class="treatment-option ${type == (assessment.treatment.treatment_type.name if assessment.treatment else '') and 'selected' or ''}" 
+                                                             role="option" data-value="${type}" i18n:translate="">${type.capitalize()}</div>
+                                                    </tal:block>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="post-treatment-fields" style="display: ${assessment.treatment and assessment.treatment.treatment_type.name == 'REDUCE' and 'block' or 'none'}">
+                                            <div class="form-group">
+                                                <label class="form-label" i18n:translate="">Post-Treatment Likelihood</label>
+                                                <div class="number-container">
+                                                    <tal:block tal:repeat="i python:range(1, 6)">
+                                                        <input type="radio" class="number-input" name="post_likelihood"
+                                                               id="post_likelihood_${assessment.id}_${i}" value="${i}"
+                                                               data-autosave="true"
+                                                               checked="${'checked' if assessment.treatment and assessment.treatment.post_likelihood == i else None}"/>
+                                                        <label class="number-label"
+                                                               for="post_likelihood_${assessment.id}_${i}">${i}</label>
+                                                    </tal:block>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label" i18n:translate="">Post-Treatment Impact</label>
+                                                <div class="number-container">
+                                                    <tal:block tal:repeat="i python:range(1, 6)">
+                                                        <input type="radio" class="number-input" name="post_impact"
+                                                               id="post_impact_${assessment.id}_${i}" value="${i}"
+                                                               data-autosave="true"
+                                                               checked="${'checked' if assessment.treatment and assessment.treatment.post_impact == i else None}"/>
+                                                        <label class="number-label"
+                                                               for="post_impact_${assessment.id}_${i}">${i}</label>
+                                                    </tal:block>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </tal:block>
+        </div>
+    </tal:block>
+
+</metal:block>

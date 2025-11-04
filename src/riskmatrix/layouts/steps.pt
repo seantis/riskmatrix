@@ -1,5 +1,63 @@
-<div class="list-group">
+<div class="list-group steps">
     <tal:b tal:repeat="step steps">
-    <a href="${step.url}" class="list-group-item list-group-item-action${' active' if active else ''}${' disabled' if step.disabled else ''}" tal:attributes="aria-current 'true' if active else None; aria-disabled 'true' if step.disabled else None" tal:define="active layout.request.path_url == step.url">${repeat.step.number}. ${step.title}</a>
+        <a href="${step.url}" class="step${' active' if active else ''}${' disabled' if step.disabled else ''}" tal:attributes="aria-current 'true' if active else None; aria-disabled 'true' if step.disabled else None" tal:define="active layout.request.path_url == step.url">
+            ${repeat.step.number}. ${step.title}
+        </a>
     </tal:b>
 </div>
+
+<style>
+    .steps {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 280px;
+        padding: 0.5rem;
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-radius: 2px;
+        color: hsl(240 10% 30%);
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: all 0.15s;
+        position: relative;
+        overflow: hidden;
+        /* Override bootstrap styles that add a border and box shadow */
+        border: none;
+        box-shadow: none;
+    }
+
+    .step::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: transparent;
+        transition: all 0.15s;
+    }
+
+    .step:hover:not(.disabled) {
+        background: hsl(220 40% 97%);
+    }
+
+    .step.active {
+        background: hsl(220 40% 97%);
+        color: hsl(220 90% 56%);
+    }
+
+    .step.active::before {
+        background: hsl(220 90% 56%);
+    }
+
+    .step.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+</style>

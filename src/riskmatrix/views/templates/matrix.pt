@@ -5,17 +5,26 @@
              xmlns:i18n="http://xml.zope.org/namespaces/i18n"
              i18n:domain="riskmatrix">
 
-
     <tal:block metal:fill-slot="content">
+            <h1>${title}</h1>
 
-        <h1>${title}</h1>
+            <div style="display: block; padding: 18px"></div>
 
-        ${plot}
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-center align-items-center">
+                        ${structure: plot}
+                    </div>
+                    </div>
+                </div>
+            </div>
 
-        <div style="display: block; padding: 24px"></div>
+            <div style="display: block; padding: 24px"></div>
 
-        ${table}
-
+        <div class="container-fluid">
+            ${table}
+        </div>
     </tal:block>
 
 </metal:block>

@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="fr"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      i18n:domain="riskmatrix">
+<head>
+  <meta charset="utf-8" />
+  <title>Rapport d'évaluation des risques</title>
+  <style>
+    /* Font declarations */
+    @font-face {
+      font-family: OpenDyslexic;
+      font-weight: bold;
+      src: url(fonts/OpenDyslexic-Bold.otf);
+    }
+    @font-face {
+      font-family: OpenDyslexic;
+      font-weight: normal;
+      src: url(fonts/OpenDyslexic-Regular.otf);
+    }
+    @font-face {
+      font-family: 'DM Serif Display';
+      font-style: normal;
+      font-weight: 400;
+      src: local(''),
+           url('/static/fonts/dm-serif-display-v5-latin-ext_latin-regular.woff2') format('woff2'),
+           url('/static/fonts/dm-serif-display-v5-latin-ext_latin-regular.woff') format('woff');
+    }
+
+    /* Page settings */
+    @page {
+      margin: 2cm 2cm 3cm 2cm;
+      size: 148mm 210mm;
+    }
+    @page landscape {
+      margin: 2cm 2cm 3cm 2cm;
+      size: 210mm 148mm; /* A5 landscape */
+    }
+    @page :left {
+      @bottom-left {
+        content: counter(page);
+        position: absolute;
+        z-index: -1;
+      }
+      @bottom-right {
+        content: string(heading);
+        position: absolute;
+        z-index: -1;
+      }
+    }
+    @page :right {
+      @bottom-left {
+        content: string(heading);
+        position: absolute;
+        z-index: -1;
+      }
+      @bottom-right {
+        content: counter(page);
+        position: absolute;
+        z-index: -1;
+      }
+    }
+    @page full {
+      @bottom-right {
+        content: none;
+      }
+      @bottom-left {
+        content: none;
+      }
+      margin: 0;
+    }
+    @page :blank,
+    @page clean {
+      @bottom-right {
+        content: none;
+      }
+      @bottom-left {
+        content: none;
+      }
+    }
+
+    /* Global settings */
+    html {
+    }
+    body {
+      margin: 0;
+      color: #212529;
+      font-size: 10pt;
+      line-height: 1.15;
+      font-family: Times, "Times New Roman", serif;
+    }
+    p {
+      line-height: 1.15;
+      text-align: justify;
+      margin: 0.5em 0;
+    }
+    img.bg {
+      display: block;
+      margin: 2em auto;
+      max-width: 70%;
+    }
+    /* Hide default H1 (used for accessibility) */
+    h1 {
+     color: #474747;
+    }
+
+    .title-overlay div {
+      color: #858585;
+    }
+
+    section {
+      /* removing break-after: right */
+    }
+    aside {
+      display: flex;
+      justify-content: center;
+    }
+    aside figure {
+      flex: none;
+      margin: 0;
+      padding: 1em;
+      text-align: center;
+    }
+    aside img {
+      border: 0.4mm solid white;
+      border-radius: 50%;
+      margin: 0 auto;
+      max-width: 14mm;
+    }
+    .character {
+      break-after: avoid;
+      margin: auto;
+      max-width: 14mm;
+    }
+    #authors {
+      padding-top: 10em;
+      page: clean;
+      text-align: center;
+    }
+    #authors img {
+      display: block;
+      margin: auto;
+      width: 75%;
+    }
+    #authors p {
+      font-size: 1.3em;
+      margin: 5em 0 1em;
+      text-align: center;
+    }
+    #authors dl {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #authors dt {
+      display: block;
+      font-size: 0.8em;
+      line-height: 2rem;
+      width: 100%;
+    }
+    #authors dd {
+      margin: 0 0.5em;
+      padding: 0;
+    }
+    #contents {
+      page: clean;
+    }
+    #contents ul {
+      display: block;
+      margin: 1em 0;
+      padding: 0;
+    }
+    #contents li {
+      display: block;
+    }
+    #contents a {
+      color: inherit;
+      text-decoration: none;
+    }
+    #contents a::before {
+      content: target-counter(attr(href), h2-counter) '. ' target-text(attr(href));
+    }
+    #contents a::after {
+      content: target-counter(attr(href), page);
+      float: right;
+    }
+    .outro {
+      border-radius: 50% 50% 0 0 / 15mm 15mm 0 0;
+      display: block;
+      height: 90mm;
+      left: -30mm;
+      max-width: none;
+      object-fit: cover;
+      position: absolute;
+      top: 120mm;
+      width: 168mm;
+      z-index: -1;
+    }
+
+    .fullpage {
+      page: full;
+      position: relative;
+      height: 210mm;
+      width: 148mm;
+      overflow: hidden;
+      page-break-after: always;
+    }
+    .fullpage img.bg {
+      bottom: 0;
+      height: 210mm;
+      left: 0;
+      margin: 0;
+      max-width: none;
+      object-fit: cover;
+      position: absolute;
+      width: 148mm;
+      z-index: 1;
+    }
+    .fullpage:last-child {
+      break-before: left;
+    }
+
+    /* Title overlay styling */
+    .title-overlay {
+      position: absolute;
+      bottom: 20mm;
+      left: 15mm;
+      z-index: 2;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    .title-overlay h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24pt;
+      margin: 0 0 8px 0;
+      font-weight: bold;
+    }
+    .title-overlay .organization-name {
+      font-size: 16pt;
+      font-weight: normal;
+      opacity: 0.9;
+      margin-bottom: 4px;
+    }
+    .title-overlay .report-date {
+      font-size: 12pt;
+      font-weight: normal;
+      opacity: 0.8;
+    }
+
+    /* --- Risk Assessment Report Custom Styling --- */
+    /* For report sections (non-cover pages) we override the chapter-style h2 */
+    h2.report-section {
+      font-size: 12pt;
+      font-weight: bold;
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+    }
+    h3 {
+      font-size: 10pt;
+      font-weight: bold;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
+    h4 {
+      font-size: 10pt;
+      font-weight: bold;
+      font-style: italic;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
+
+    /* Table styling */
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    .report-table th,
+    .report-table td {
+      border: 1px solid #dee2e6;
+      padding: 8px;
+      text-align: left;
+    }
+    .report-table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+
+    /* Page breaks */
+    .page-break {
+      page-break-after: always;
+    }
+
+    /* Risk details */
+    .risk-detail {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+    }
+    .risk-detail h4 {
+      margin-top: 0;
+      color: #495057;
+    }
+    section:not(.fullpage) {
+      margin-bottom: 2em;
+    }
+    /* Landscape page for detailed analysis */
+    .landscape-page {
+      page: landscape;
+      page-break-before: always;
+      page-break-after: always;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    /* Table adjustments for landscape orientation */
+    .landscape-page .report-table {
+      font-size: 9pt; /* Slightly smaller font to fit more content */
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .landscape-page .report-table th:nth-child(1),
+    .landscape-page .report-table td:nth-child(1) {
+      width: 8%; /* Risk ID column */
+    }
+    .landscape-page .report-table th:nth-child(2),
+    .landscape-page .report-table td:nth-child(2) {
+      width: 25%; /* Name column */
+    }
+    .landscape-page .report-table th:nth-child(3),
+    .landscape-page .report-table td:nth-child(3) {
+      width: 12%; /* Impact column */
+    }
+    .landscape-page .report-table th:nth-child(4),
+    .landscape-page .report-table td:nth-child(4) {
+      width: 15%; /* Likelihood column */
+    }
+    .landscape-page .report-table th:nth-child(5),
+    .landscape-page .report-table td:nth-child(5) {
+      width: 40%; /* Treatment column - more space for reasoning text */
+    }
+    /* Ensure text wraps properly in landscape table cells */
+    .landscape-page .report-table td {
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      hyphens: auto;
+      padding: 6px; /* Slightly reduce padding to save space */
+    }
+    .landscape-page .report-table th {
+      padding: 6px;
+      font-size: 8.5pt; /* Slightly smaller headers */
+    }
+  </style>
+</head>
+<body>
+
+  <title>Rapport d'évaluation des risques</title>
+
+  <section class="fullpage">
+    <img class="bg" src="${request.static_url('riskmatrix:static/eisklettern_square.jpg')}" alt="Risk Matrix">
+    <div class="title-overlay">
+      <img class="organization-logo" src="https://seantis.ch/static/img/logo.svg" alt="Seantis Logo" style="height: 32px;margin-bottom: 8px;">
+      <h1>Rapport d'évaluation des risques</h1>
+      <div class="report-date">${assessment.finished_at.strftime('%d %B %Y') if assessment.finished_at else assessment.created.strftime('%d %B %Y')}</div>
+    </div>
+  </section>
+
+  <!-- Introduction -->
+  <div class="page-break">
+    <h2 class="report-section">Introduction</h2>
+    <p>
+      La norme ISO/IEC 27002:2022 est une norme reconnue internationalement qui fournit un ensemble complet de contrôles de sécurité de l'information et de directives de mise en œuvre. Elle sert de référence pour sélectionner et mettre en œuvre des contrôles de sécurité dans le cadre du processus de traitement des risques d'une organisation. L'adoption de la norme ISO/IEC 27002:2022 dans l'évaluation des risques est cruciale car elle garantit une <strong>approche basée sur les risques</strong> pour la gestion de la sécurité. En pratique, cela signifie que les efforts et les ressources de sécurité sont concentrés sur les risques réels qui pourraient avoir un impact sur l'organisation, plutôt que sur des mesures arbitraires ou ad hoc. Par exemple, la norme souligne explicitement l'importance d'une évaluation et d'une gestion rigoureuses des risques afin que les organisations identifient systématiquement les menaces potentielles et les traitent avec des contrôles appropriés.
+    </p>
+    <p>
+      La nécessité de la norme ISO/IEC 27002:2022 dans les programmes de sécurité modernes est encore soulignée par son ensemble de contrôles mis à jour. L'édition 2022 <strong>actualise et affine les contrôles de sécurité</strong> pour refléter les développements actuels et les meilleures pratiques en matière de cybersécurité. En alignant les activités d'évaluation des risques sur cette norme mise à jour, les organisations s'assurent qu'elles prennent en compte les dernières menaces (telles que les cyberattaques avancées, les risques de la chaîne d'approvisionnement ou les problèmes de sécurité cloud) et appliquent les contrôles les plus pertinents pour les atténuer. En résumé, l'intégration de la norme ISO/IEC 27002:2022 dans le processus d'évaluation des risques aide à maintenir une approche structurée, cohérente et actualisée de la gestion de la sécurité de l'information, ce qui est essentiel pour protéger les actifs et maintenir la confiance des parties prenantes dans le paysage de menaces en évolution d'aujourd'hui.
+    </p>
+
+    <h3>Définitions</h3>
+    <p>
+      <strong>Risque :</strong> Dans le contexte de la norme ISO 27002, un risque est défini comme « l'effet de l'incertitude sur les objectifs ». Cet effet peut être positif ou négatif, mais en sécurité de l'information, il fait généralement référence à des résultats négatifs potentiels. Le risque est souvent exprimé comme une combinaison des conséquences potentielles d'un événement (impact) et de la probabilité que cet événement se produise. En d'autres termes, un risque de sécurité de l'information est mesuré en considérant à quel point le résultat serait mauvais <em>s'il</em> se produit (impact) et quelle est la probabilité qu'il <em>se produise</em> (vraisemblance).
+    </p>
+    <p>
+      <strong>Actif :</strong> Un actif est « tout ce qui a de la valeur pour l'organisation et qui, par conséquent, nécessite une protection ». Dans un contexte de sécurité, les actifs comprennent non seulement des éléments physiques comme le matériel et les installations, mais aussi les informations, les logiciels, les services et les personnes ayant des compétences importantes. Essentiellement, toute ressource qui vous importe – des bases de données et données confidentielles à la réputation de l'entreprise – peut être considérée comme un actif si sa perte ou sa compromission affecterait négativement l'organisation.
+    </p>
+    <p>
+      <strong>Traitement du risque :</strong> Le traitement du risque est le processus de <strong>modification ou de gestion du risque</strong>. Après l'identification et l'évaluation des risques, l'organisation doit décider comment traiter chaque risque. Selon les normes ISO, le traitement du risque implique la sélection et la mise en œuvre d'une ou plusieurs options pour gérer le risque. Les options courantes de traitement du risque comprennent :
+    </p>
+    <ul>
+      <li><strong>Atténuation (Réduction) :</strong> Mise en œuvre de contrôles de sécurité ou d'autres mesures pour réduire la probabilité ou l'impact du risque.</li>
+      <li><strong>Évitement :</strong> Modification des plans ou des circonstances pour prévenir entièrement le risque.</li>
+      <li><strong>Transfert (Partage) :</strong> Transfert du risque à un tiers, par exemple par le biais d'une assurance ou de l'externalisation.</li>
+      <li><strong>Acceptation :</strong> Reconnaissance du risque et décision de l'accepter sans action supplémentaire.</li>
+    </ul>
+    <p>
+      Chaque décision de traitement doit être enregistrée dans un plan de traitement des risques, décrivant comment l'option choisie sera mise en œuvre pour gérer le risque. L'objectif du traitement des risques est de réduire le risque résiduel à un niveau acceptable aligné sur l'appétit pour le risque de l'organisation.
+    </p>
+
+    <h3>Échelles d'impact et de vraisemblance</h3>
+    <p>
+      L'évaluation des risques utilise une échelle à 5 points pour l'<strong>Impact</strong> et la <strong>Vraisemblance</strong>. L'impact fait référence à la gravité des conséquences si un événement de risque se produit, tandis que la vraisemblance fait référence à la probabilité que l'événement se produise. Les échelles ci-dessous fournissent un dictionnaire standardisé pour ces évaluations :
+    </p>
+    <p><strong>Échelle d'impact (Niveaux 1–5) :</strong></p>
+    <ol>
+      <li><strong>Niveau 1 – Insignifiant :</strong> Conséquences négligeables avec peu ou pas d'impact.</li>
+      <li><strong>Niveau 2 – Mineur :</strong> Faible impact causant des perturbations mineures.</li>
+      <li><strong>Niveau 3 – Modéré :</strong> Impact notable nécessitant l'attention de la direction.</li>
+      <li><strong>Niveau 4 – Majeur :</strong> Conséquences graves avec un impact significatif.</li>
+      <li><strong>Niveau 5 – Sévère (Catastrophique) :</strong> Impact dévastateur menaçant la viabilité de l'organisation.</li>
+    </ol>
+    <p><strong>Échelle de vraisemblance (Niveaux 1–5) :</strong></p>
+    <ol>
+      <li><strong>Niveau 1 – Rare :</strong> Très peu probable, presque hors de portée.</li>
+      <li><strong>Niveau 2 – Peu probable :</strong> Faible probabilité dans des conditions normales.</li>
+      <li><strong>Niveau 3 – Possible :</strong> Chance réaliste de se produire.</li>
+      <li><strong>Niveau 4 – Probable :</strong> Plus probable que le contraire.</li>
+      <li><strong>Niveau 5 – Presque certain :</strong> Prévu de se produire avec une quasi-certitude.</li>
+    </ol>
+
+    <h3>Aperçu du processus d'évaluation des risques</h3>
+    <p>
+      La réalisation d'une évaluation des risques conformément à la norme ISO/IEC 27002:2022 implique une approche systématique. Le processus comprend :
+    </p>
+    <ol>
+      <li><strong>Établir le contexte et les critères :</strong> Définir la portée, les objectifs et les critères d'évaluation, y compris l'identification des actifs et les critères de risque.</li>
+      <li><strong>Identifier les risques :</strong> Répertorier les risques potentiels pour les actifs dans le périmètre en utilisant diverses techniques (par exemple, remue-méninges, listes de contrôle, entretiens d'experts).</li>
+      <li><strong>Analyser les risques :</strong> Évaluer la probabilité et l'impact de chaque risque, en tenant compte des contrôles existants.</li>
+      <li><strong>Évaluer les risques :</strong> Comparer les risques aux critères de risque définis pour les prioriser en vue du traitement.</li>
+      <li><strong>Traiter les risques :</strong> Décider des options de traitement des risques appropriées (atténuation, évitement, transfert ou acceptation) et formuler un plan de traitement des risques.</li>
+      <li><strong>Surveiller et réviser :</strong> Surveiller en permanence et réévaluer périodiquement les risques et l'efficacité des contrôles.</li>
+    </ol>
+    <p>
+      Ce processus systématique garantit que les contrôles de sécurité sont mis en œuvre en fonction des risques spécifiques et s'alignent sur les objectifs organisationnels.
+    </p>
+  </div>
+
+  <!-- Visualisation de la matrice des risques -->
+  <div class="page-break">
+    <h2 class="report-section">Matrice des risques</h2>
+    <p>
+      La matrice des risques ci-dessous fournit une représentation visuelle de tous les risques identifiés. Chaque risque est positionné selon son impact (axe horizontal) et sa vraisemblance (axe vertical). Les couleurs représentent le niveau de risque :
+    </p>
+    <ul>
+      <li><span style="color: #b91c1c; font-weight: bold;">Rouge</span> - Risque élevé : Action immédiate requise</li>
+      <li><span style="color: #d97706; font-weight: bold;">Jaune</span> - Risque moyen : Plan d'action requis</li>
+      <li><span style="color: #15803d; font-weight: bold;">Vert</span> - Risque faible : Surveiller et réviser périodiquement</li>
+    </ul>
+    <div style="text-align: center; margin: 30px 0;">
+      <img src="${risk_matrix_image}" alt="Visualisation de la matrice des risques" style="max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 5px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+      <div style="margin-top: 10px; font-style: italic; color: #4b5563; font-size: 0.9em;">Matrice des risques : Les numéros représentent les identifiants de risque</div>
+    </div>
+    <p>
+      Cette évaluation visuelle aide à prioriser les risques en fonction de leur impact potentiel et de leur probabilité d'occurrence. Les éléments à risque élevé (zone rouge) nécessitent généralement une attention immédiate et des stratégies d'atténuation complètes, tandis que les éléments à risque moyen (zone jaune) doivent être traités avec des contrôles appropriés. Les éléments à faible risque (zone verte) peuvent être acceptés avec des contrôles minimaux mais doivent toujours être surveillés.
+    </p>
+  </div>
+
+  <!-- Analyse détaillée des risques -->
+  <div class="landscape-page">
+    <h2 class="report-section">Analyse détaillée des risques</h2>
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>ID du risque</th>
+          <th>Nom</th>
+          <th>Impact</th>
+          <th>Vraisemblance</th>
+          <th>Traitement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr tal:repeat="risk risks">
+          <td>${risk['id']}</td>
+          <td>${risk['name']}</td>
+          <td>${risk['impact']}</td>
+          <td>${risk['likelihood']}</td>
+          <td>${risk.get('treatment', 'Non spécifié')}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Résumé du traitement -->
+  <div class="page-break">
+    <h2 class="report-section">Résumé du traitement</h2>
+    <div class="risk-detail" tal:repeat="risk risks">
+      <h4>Risque ${risk['id']}: ${risk['name']}</h4>
+      <p><strong>Évaluation actuelle :</strong> Impact ${risk['impact']}, Vraisemblance ${risk['likelihood']}</p>
+      <p><strong>Approche de traitement :</strong> ${risk.get('treatment_type', 'Non spécifié')}</p>
+      <p><strong>Détails du traitement :</strong> ${risk.get('treatment_details', 'Aucun détail fourni')}</p>
+    </div>
+  </div>
+
+  <!-- Conclusion -->
+  <div>
+    <h2 class="report-section">Conclusion</h2>
+    <h3>Résumé des résultats</h3>
+    <p>
+      L'évaluation des risques de l'environnement de sécurité de l'information de l'organisation a été complétée conformément aux directives ISO/IEC 27002:2022. L'évaluation a identifié et évalué [X] risques dans le périmètre défini (par exemple, départements, systèmes ou actifs examinés). Chaque risque a été évalué pour sa vraisemblance et son impact, résultant en un profil de risque clair indiquant quels risques sont de priorité élevée, moyenne ou faible. [Insérer un bref résumé du profil de risque : par exemple, « N risques élevés, M risques moyens et L risques faibles ont été identifiés. »] L'analyse a mis en évidence des domaines de préoccupation clés, tels que [mentionner tout thème de risque critique – par exemple, « accès non autorisé aux données sensibles » ou « contrôles de sauvegarde et de récupération insuffisants »], qui ont dépassé les critères d'acceptation des risques de l'organisation. En même temps, plusieurs contrôles ont été confirmés comme étant efficaces, abordant [mentionner les domaines où les contrôles sont solides – par exemple, « sécurité du périmètre réseau » ou « sensibilisation des employés à la sécurité »] et maintenant certains risques à des niveaux acceptables. Dans l'ensemble, cette évaluation systématique fournit à la direction une compréhension priorisée de l'endroit où l'organisation est la plus vulnérable et où elle est adéquatement protégée.
+    </p>
+    <h3>Traitement des risques et prochaines étapes</h3>
+    <p>
+      Sur la base des résultats, l'organisation développera et mettra en œuvre un plan de traitement des risques complet pour traiter les risques inacceptables identifiés. Les risques de haute priorité (ceux évalués au-dessus du seuil acceptable) seront atténués avec des contrôles ou des actions appropriés, conformément aux recommandations ISO/IEC 27002:2022 pour la sélection des contrôles. Pour chaque risque de ce type, des traitements spécifiques ont été proposés [ou seront déterminés] – par exemple, [mentionner brièvement quelques traitements clés, par exemple, « mettre en œuvre l'authentification multi-facteurs pour atténuer le risque d'accès non autorisé » ou « mettre à niveau les systèmes de sauvegarde pour réduire le risque de perte de données »]. Les risques de niveau moyen peuvent être traités ou surveillés en fonction de l'analyse coût-bénéfice et de l'appétit pour le risque, tandis que les risques de faible niveau seront documentés et réexaminés lors de futures revues. Les décisions de traitement des risques, y compris toute acceptation de risque, seront documentées et approuvées par la direction pour garantir la responsabilité.
+    </p>
+    <p>
+      À l'avenir, il est crucial que l'efficacité des contrôles mis en œuvre soit surveillée et que l'environnement de risque soit régulièrement examiné pour détecter les changements. L'équipe de sécurité de l'information programmera des réunions périodiques de revue des risques (par exemple, trimestrielles ou annuelles) pour mettre à jour le registre des risques, suivre les progrès des actions de traitement et capturer tout nouveau risque qui émerge. Ce processus de surveillance et de réévaluation continues garantit que le profil de risque de l'organisation reste à jour et que les contrôles de sécurité évoluent en réponse aux nouvelles menaces ou aux changements d'activité. En maintenant ce cycle d'évaluation, de traitement et de revue, l'organisation démontre une conformité continue aux principes ISO 27001/27002 et un engagement envers l'amélioration continue de sa gestion de la sécurité de l'information.
+    </p>
+    <p>
+      Enfin, les résultats de cette évaluation des risques et le plan de traitement des risques subséquent seront communiqués à toutes les parties prenantes concernées. L'approbation du plan par la direction sera obtenue pour confirmer que les atténuations de risques proposées s'alignent sur les objectifs commerciaux et l'appétit pour le risque. [Optionnel : Inclure une déclaration sur le risque résiduel et l'acceptation, par exemple, « La direction reconnaît les risques résiduels restant après le traitement et les accepte comme étant dans la tolérance au risque organisationnelle. »] À l'achèvement des traitements planifiés, l'organisation aura une posture de sécurité améliorée avec une exposition réduite aux risques les plus significatifs identifiés dans cette évaluation. Cette approche structurée de l'évaluation des risques – tirant parti du cadre ISO/IEC 27002:2022 – fournit une base solide pour que l'organisation protège ses actifs et atteigne ses objectifs stratégiques en toute sécurité. L'organisation continuera à affiner son processus de gestion des risques, en veillant à ce que la sécurité de l'information reste proactive et alignée à la fois sur les meilleures pratiques de l'industrie et les conditions de risque en évolution.
+    </p>
+  </div>
+
+  <!-- Section d'approbation et de signature -->
+  <div class="page-break">
+    <h2 class="report-section">Approbation et signature</h2>
+    <p>
+      Ce rapport d'évaluation des risques a été examiné et approuvé par les soussignés, confirmant que les résultats, les évaluations des risques et les plans de traitement ont été enregistrés avec précision et sont acceptés par l'organisation.
+    </p>
+    
+    <div style="margin-top: 60px;">
+      <div style="display: inline-block; width: 48%;">
+        <div style="border-bottom: 1px solid #000; margin-bottom: 5px; height: 30px;"></div>
+        <div style="font-weight: bold;">Signature autorisée</div>
+      </div>
+      <div style="display: inline-block; width: 48%; float: right;">
+        <div style="border-bottom: 1px solid #000; margin-bottom: 5px; height: 30px;"></div>
+        <div style="font-weight: bold;">Date</div>
+      </div>
+    </div>
+    
+    <div style="margin-top: 40px;">
+      <div style="display: inline-block; width: 48%;">
+        <div style="border-bottom: 1px solid #000; margin-bottom: 5px; height: 30px;"></div>
+        <div style="font-weight: bold;">Nom (en lettres moulées)</div>
+      </div>
+      <div style="display: inline-block; width: 48%; float: right;">
+        <div style="border-bottom: 1px solid #000; margin-bottom: 5px; height: 30px;"></div>
+        <div style="font-weight: bold;">Poste/Titre</div>
+      </div>
+    </div>
+    
+    <div style="margin-top: 60px;">
+      <div style="display: inline-block; width: 100%;">
+        <div style="border-bottom: 1px solid #000; margin-bottom: 5px; height: 30px;"></div>
+        <div style="font-weight: bold;">Organisation</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 80px; font-style: italic; text-align: center; color: #666; font-size: 9pt;">
+      <p>Ce rapport a été généré le ${assessment.finished_at.strftime('%d %B %Y') if assessment.finished_at else assessment.created.strftime('%d %B %Y')}</p>
+      <p>Évaluation des risques ISO/IEC 27002:2022</p>
+    </div>
+  </div>
+</body>
+</html>

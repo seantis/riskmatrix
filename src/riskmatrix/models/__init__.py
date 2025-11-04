@@ -13,6 +13,7 @@ from .risk_assessment import RiskAssessment, RiskMatrixAssessment
 from .risk_catalog import RiskCatalog
 from .risk_category import RiskCategory
 from .risk_assessment_info import RiskAssessmentInfo
+from .risk_assessment_treatment import RiskAssessmentTreatment
 from .user import User
 from .password_change_token import PasswordChangeToken
 
@@ -66,4 +67,5 @@ __all__ = (
     'User',
     'PasswordChangeToken',
     'RiskAssessmentInfo',
+    'RiskAssessmentTreatment',
 )

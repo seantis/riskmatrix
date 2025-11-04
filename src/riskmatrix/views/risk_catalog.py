@@ -53,7 +53,7 @@ class RiskCatalogGenerationForm(Form):
         )
 
     question_1 = StringField(
-        label=_('In welchem Bereich agiert die Firma?'),
+        label=_('What is the main business area of the company?'),
         validators=(
             validators.DataRequired(),
             validators.Length(max=256, min=2),
@@ -61,7 +61,7 @@ class RiskCatalogGenerationForm(Form):
     )
 
     question_2 = StringField(
-        label=_('Bitte beschreibe deine Haupt-Kundenportolio in einem Satz'),
+        label=_('Please describe your main customer portfolio in one sentence'),
         validators=(
             validators.DataRequired(),
             validators.Length(max=256, min=2),
@@ -70,8 +70,7 @@ class RiskCatalogGenerationForm(Form):
 
     question_3 = StringField(
         label=_(
-            "Was für IT Angelegenheiten werden ",
-            "durch externe Partner betrieben?"
+            "What IT services are operated by external partners?"
         ),
         validators=(
             validators.DataRequired(),
@@ -234,12 +233,9 @@ def risk_catalog_view(
         )],
         'edit_form': RiskCatalogForm(None, request),
         'generate_form': RiskCatalogGenerationForm(None, request),
-        'helper_text': Markup(  # noqa: MS001
-            (
-                "Risk catalogs are collections of risks to be combined with",
-                " multiple different assets, looking for ",
-                "<a href=\"/assets\">assets</a>?"
-            )
+        'helper_text': Markup(
+            _("Risk catalogs are collections of risks to be combined with multiple different assets, looking for")
+            + ' <a href="/assets">' + _('assets') + '</a>?'
         )
     }
 

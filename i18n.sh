@@ -33,17 +33,17 @@ if [ $# -eq 0 ]; then
 
     echo "Update translations"
     for po in "$LOCALES_PATH"/*/LC_MESSAGES/$DOMAIN.po; do
-        msgmerge --no-fuzzy-matching -o "$po" "$po" "$LOCALES_PATH"/$DOMAIN.pot
+        msgmerge --previous -o "$po" "$po" "$LOCALES_PATH"/$DOMAIN.pot
     done
 
     echo "Compile message catalogs"
     for po in "$LOCALES_PATH"/*/LC_MESSAGES/*.po; do
-        msgfmt --statistics -o "${po%.*}.mo" "$po"
+        msgfmt --check --use-fuzzy --statistics -o "${po%.*}.mo" "$po"
     done
 
 # first argument represents language identifier, create catalog
 else
     cd "$LOCALES_PATH"
     mkdir -p $1/LC_MESSAGES
-    msginit -i $DOMAIN.pot -o $1/LC_MESSAGES/$DOMAIN.po -l $1
+    msginit --no-wrap -i $DOMAIN.pot -o $1/LC_MESSAGES/$DOMAIN.po -l $1 --no-translator
 fi

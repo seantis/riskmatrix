@@ -1,3 +1,22 @@
+# German translations for riskmatrix.
+# Copyright (C) 2024 ORGANIZATION
+# This file is distributed under the same license as the riskmatrix project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: riskmatrix 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-09-14 18:03+0200\n"
+"PO-Revision-Date: 2024-02-12 10:42+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: de <LL@li.org>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: Babel 2.8.0\n"
+
 #. translation strings used for testing
 #: src/riskmatrix/testing.py
 msgid "Just a test"
@@ -9,7 +28,7 @@ msgstr "<b>fett</b>"
 
 #: src/riskmatrix/layouts/navbar.pt
 msgid "Logout"
-msgstr ""
+msgstr "Abmelden"
 
 #: src/riskmatrix/layouts/navbar.py
 msgid "Organization"
@@ -21,7 +40,7 @@ msgstr "Risikokatalog"
 
 #: src/riskmatrix/layouts/navbar.py
 msgid "Risk Assessment"
-msgstr ""
+msgstr "Risikobewertung"
 
 #. Default: Close
 #: src/riskmatrix/layouts/flash.pt
@@ -30,32 +49,32 @@ msgstr "Schliessen"
 
 #: src/riskmatrix/layouts/steps.py src/riskmatrix/views/risk_assessment.py
 msgid "Identify Risks"
-msgstr "Risiken Identifizieren"
+msgstr "Risiken identifizieren"
 
 #: src/riskmatrix/layouts/steps.py src/riskmatrix/views/risk_assessment.py
 msgid "Assess Impact"
-msgstr ""
+msgstr "Auswirkung bewerten"
 
 #: src/riskmatrix/layouts/steps.py src/riskmatrix/views/risk_assessment.py
 msgid "Assess Likelihood"
-msgstr ""
+msgstr "Wahrscheinlichkeit bewerten"
 
 #: src/riskmatrix/layouts/steps.py
 msgid "Generate Risk Matrix"
-msgstr ""
+msgstr "Risikomatrix erstellen"
 
 #: src/riskmatrix/layouts/steps.py
 msgid "Plan Actions"
-msgstr ""
+msgstr "Massnahmen planen"
 
 #: src/riskmatrix/views/organization.py src/riskmatrix/views/risk_assessment.py
 #: src/riskmatrix/views/risk.py src/riskmatrix/views/risk_catalog.py
 msgid "Name"
-msgstr ""
+msgstr "Name"
 
 #: src/riskmatrix/views/organization.py
 msgid "E-Mail"
-msgstr ""
+msgstr "E-Mail"
 
 #: src/riskmatrix/views/organization.py
 msgid "Language"
@@ -63,142 +82,192 @@ msgstr "Sprache"
 
 #: src/riskmatrix/views/risk_assessment.py
 msgid "Edit Risk Assessment"
-msgstr ""
+msgstr "Risikobewertung bearbeiten"
 
 #: src/riskmatrix/views/risk_assessment.py src/riskmatrix/views/risk.py
 #: src/riskmatrix/views/risk_catalog.py
 msgid "Description"
-msgstr ""
+msgstr "Beschreibung"
 
 #: src/riskmatrix/views/risk_assessment.py src/riskmatrix/views/risk.py
 msgid "Category"
-msgstr ""
+msgstr "Kategorie"
 
 #: src/riskmatrix/views/risk_assessment.py
 msgid "Asset"
-msgstr ""
+msgstr "Vermögenswert"
 
 #: src/riskmatrix/views/risk_assessment.py src/riskmatrix/views/risk.py
 #: src/riskmatrix/views/risk_catalog.py
 msgid "Edit Risk"
-msgstr ""
+msgstr "Risiko bearbeiten"
 
 #: src/riskmatrix/views/risk_assessment.py
 msgid "Impact"
-msgstr ""
+msgstr "Auswirkung"
 
 #: src/riskmatrix/views/risk_assessment.py
 msgid "Likelihood"
-msgstr ""
+msgstr "Wahrscheinlichkeit"
 
 #: src/riskmatrix/views/risk_assessment.py
 #, python-format
 msgid "Invalid impact level \"${level}\" provided."
-msgstr ""
+msgstr "Ungueltiges Auswirkungsniveau \"${level}\" angegeben."
 
 #: src/riskmatrix/views/risk_assessment.py
 #, python-format
 msgid "Invalid likelihood level \"${level}\" provided."
-msgstr ""
+msgstr "Ungueltiges Wahrscheinlichkeitsniveau \"${level}\" angegeben."
 
 #: src/riskmatrix/views/risk.py src/riskmatrix/views/risk_catalog.py
 msgid "Add Risk"
-msgstr ""
+msgstr "Risiko hinzufuegen"
 
 #: src/riskmatrix/views/risk.py src/riskmatrix/views/risk_catalog.py
 msgid "A risk with this name already exists."
-msgstr ""
+msgstr "Ein Risiko mit diesem Namen existiert bereits."
 
 #: src/riskmatrix/views/risk.py src/riskmatrix/views/risk_catalog.py
 #: src/riskmatrix/views/templates/table.pt
 msgid "Delete"
-msgstr ""
+msgstr "Loeschen"
 
 #: src/riskmatrix/views/risk.py
 #, python-format
 msgid "${catalog}: Risks"
-msgstr ""
+msgstr "${catalog}: Risiken"
 
 #: src/riskmatrix/views/risk.py
 msgid "Delete Risk"
-msgstr ""
+msgstr "Risiko loeschen"
 
 #: src/riskmatrix/views/risk.py
 #, python-format
 msgid "Succesfully deleted risk \"${name}\""
-msgstr ""
+msgstr "Risiko \"${name}\" erfolgreich geloescht"
 
 #: src/riskmatrix/views/risk.py
 #, python-format
 msgid "Succesfully added risk \"${name}\""
-msgstr ""
+msgstr "Risiko \"${name}\" erfolgreich hinzugefuegt"
 
 #: src/riskmatrix/views/risk_catalog.py
 msgid "View Risks"
-msgstr ""
+msgstr "Risiken anzeigen"
 
 #: src/riskmatrix/views/risk_catalog.py
 msgid "Edit Catalog"
-msgstr ""
+msgstr "Katalog bearbeiten"
 
 #: src/riskmatrix/views/risk_catalog.py
 msgid "Delete Risk Catalog"
-msgstr ""
+msgstr "Risikokatalog loeschen"
 
 #: src/riskmatrix/views/risk_catalog.py
 msgid "Add Risk Catalog"
-msgstr ""
+msgstr "Risikokatalog hinzufuegen"
 
 #: src/riskmatrix/views/risk_catalog.py
 #, python-format
 msgid "Succesfully deleted risk catalog \"${name}\""
-msgstr ""
+msgstr "Risikokatalog \"${name}\" erfolgreich geloescht"
 
 #: src/riskmatrix/views/risk_catalog.py
 #, python-format
 msgid "Succesfully added risk catalog \"${name}\""
-msgstr ""
+msgstr "Risikokatalog \"${name}\" erfolgreich hinzugefuegt"
 
 #: src/riskmatrix/views/templates/login.pt
 msgid "Sign in"
-msgstr ""
+msgstr "Anmelden"
 
 #: src/riskmatrix/views/templates/login.pt
 msgid "Email address"
-msgstr ""
+msgstr "E-Mail-Adresse"
 
 #: src/riskmatrix/views/templates/login.pt
 msgid "Password"
-msgstr ""
+msgstr "Passwort"
 
 #: src/riskmatrix/views/templates/form.pt
 #: src/riskmatrix/views/templates/table.pt
 msgid "Cancel"
-msgstr ""
+msgstr "Abbrechen"
 
 #: src/riskmatrix/views/templates/form.pt
 #: src/riskmatrix/views/templates/table.pt
 msgid "Save"
-msgstr ""
+msgstr "Speichern"
 
 #: src/riskmatrix/views/templates/table.pt
 msgid "Do you really wish to delete \"${item_title}\"?"
-msgstr ""
+msgstr "Moechten Sie \"${item_title}\" wirklich loeschen?"
 
 #: src/riskmatrix/wtform/validators.py
 msgid "Password and confirmation do not match."
-msgstr ""
+msgstr "Passwort und Bestaetigung stimmen nicht ueberein."
 
 #: src/riskmatrix/wtform/validators.py
 msgid ""
 "Password must have minimal length of 8 characters, contain one upper case "
 "letter, one lower case letter, one digit and one special character."
 msgstr ""
+"Das Passwort muss mindestens 8 Zeichen lang sein und einen Grossbuchstaben, "
+"einen Kleinbuchstaben, eine Ziffer und ein Sonderzeichen enthalten."
 
 #: src/riskmatrix/wtform/validators.py
 msgid "This field is disabled."
-msgstr ""
+msgstr "Dieses Feld ist deaktiviert."
 
 #: src/riskmatrix/wtform/validators.py
 msgid "This field is read only."
-msgstr ""
+msgstr "Dieses Feld ist schreibgeschuetzt."
+
+msgid "Plan Treatment"
+msgstr "Behandlung planen"
+
+msgid "Finish Assessment"
+msgstr "Bewertung abschliessen"
+
+msgid "Assets"
+msgstr "Vermögenswerte"
+
+msgid "Finish Risk Assessment"
+msgstr "Risikobewertung abschliessen"
+
+msgid "Pre-Treatment Risk Matrix"
+msgstr "Risikomatrix vor Behandlung"
+
+msgid "Post-Treatment Risk Matrix"
+msgstr "Risikomatrix nach Behandlung"
+
+msgid "Treatment Impact Overview"
+msgstr "Übersicht der Behandlungsauswirkungen"
+
+msgid "Treatment Type"
+msgstr "Behandlungstyp"
+
+msgid "Pre-Treatment Likelihood"
+msgstr "Wahrscheinlichkeit vor Behandlung"
+
+msgid "Post-Treatment Likelihood"
+msgstr "Wahrscheinlichkeit nach Behandlung"
+
+msgid "Pre-Treatment Impact"
+msgstr "Auswirkung vor Behandlung"
+
+msgid "Post-Treatment Impact"
+msgstr "Auswirkung nach Behandlung"
+
+msgid "Overview of all Risk Assessments"
+msgstr "Übersicht aller Risikobewertungen"
+
+msgid "Display Name"
+msgstr "Anzeigename"
+
+msgid "Closed on"
+msgstr "Geschlossen am"
+
+msgid "Finish"
+msgstr "Abschliessen"
