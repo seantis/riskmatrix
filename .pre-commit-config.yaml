@@ -55,3 +55,7 @@ repos:
         rev: v8.24.2
         hooks:
           - id: gitleaks
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.28.0
+    hooks:
+      - id: zizmor
