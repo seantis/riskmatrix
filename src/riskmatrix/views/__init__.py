@@ -15,7 +15,11 @@ from .home import home_view
 from .login import login_view
 from .logout import logout_view
 from .organization import organization_view
-from .risk import delete_risk_view, generate_risk_completion, stream_risk_generation
+from .risk import (
+    delete_risk_view,
+    generate_risk_completion,
+    stream_risk_generation
+)
 from .risk import edit_risk_view
 from .risk import risks_view
 from .risk_assessment import assess_impact_view
@@ -112,8 +116,16 @@ def includeme(config: 'Configurator') -> None:
         renderer='templates/table.pt',
     )
 
-    config.add_route('finish_assessment', '/assessment/finish', factory=organization_factory)
-    config.add_view(finish_risk_assessment_view, route_name='finish_assessment', renderer='templates/finish_assessment.pt')
+    config.add_route(
+        'finish_assessment',
+        '/assessment/finish',
+        factory=organization_factory
+    )
+    config.add_view(
+        finish_risk_assessment_view,
+        route_name='finish_assessment',
+        renderer='templates/finish_assessment.pt'
+    )
 
     config.add_route(
         'add_asset',
@@ -337,7 +349,7 @@ def includeme(config: 'Configurator') -> None:
         request_method='DELETE',
         xhr=True
     )
-    
+
     # Risk assessment views
 
     config.add_route(

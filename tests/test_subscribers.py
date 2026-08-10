@@ -1,7 +1,7 @@
 from pyramid.events import NewRequest
 from pyramid.events import NewResponse
 
-from riskmatrix.subscribers import csp_header, request_nonce_generator
+from riskmatrix.subscribers import csp_header
 from riskmatrix.subscribers import sentry_context
 from riskmatrix.testing import DummyRequest
 
